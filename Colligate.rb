@@ -38,13 +38,14 @@ while true
 		downloader.downloadAuctionJSON
 		dbhandeler.readAuctionJSON
 		dbhandeler.writeAuctionsToDB
+		dbhandeler.moveoldtolog
 		dbhandeler.deleteold
 
 	when "5"
 
 		#dbhandeler.test
 
-		dbhandeler.deleteold
+		dbhandeler.test
 
 	when "0"
 		exit
