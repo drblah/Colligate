@@ -163,5 +163,5 @@ pip-log.txt
 .DS_Store
 
 # Colligate stuff
-*.json
-*.db
+auctionJSONfile.json
+Auctions.db
