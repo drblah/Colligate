@@ -7,6 +7,8 @@ $lastModified = 0
 downloader = Downloader.new("eu.battle.net","argent-dawn")
 dbhandeler = DBmanager.new()
 
+#Command line input parser
+
 
 
 while true
@@ -16,10 +18,19 @@ while true
 	puts("2. Load auctions into memory\n")
 	puts("3. Store auctions into the database")
 	puts("4. Download, Load and store")
-	puts("5. Test")
+	puts("5. AutoMode")
 	puts("0. Exit program\n")
 	
-	input = gets.chomp
+
+	if(ARGV.length == 0)
+
+		input = gets.chomp
+
+	else
+
+		input = ARGV[0]
+
+	end
 
 	case input
 	when "1"
@@ -43,9 +54,12 @@ while true
 
 	when "5"
 
-		#dbhandeler.test
-
-		dbhandeler.test
+		downloader.downloadAuctionJSON
+		dbhandeler.readAuctionJSON
+		dbhandeler.writeAuctionsToDB
+		dbhandeler.moveoldtolog
+		dbhandeler.deleteold
+		exit
 
 	when "0"
 		exit
