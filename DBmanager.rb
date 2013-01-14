@@ -146,8 +146,8 @@ class DBmanager
 		puts "Moving old Auctions to log."
 
 		@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE timestamp != 0 AND timestamp < :lastModified", "lastModified" => $lastModified)
-		@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE timestamp != 0 AND timestamp < :lastModified", "lastModified" => $lastModified)
-		@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE timestamp != 0 AND timestamp < :lastModified", "lastModified" => $lastModified)
+		@db.execute("INSERT OR IGNORE INTO HordeLog SELECT * FROM Horde WHERE timestamp != 0 AND timestamp < :lastModified", "lastModified" => $lastModified)
+		@db.execute("INSERT OR IGNORE INTO NeutralLog SELECT * FROM Neutral WHERE timestamp != 0 AND timestamp < :lastModified", "lastModified" => $lastModified)
 		
 	end
 
