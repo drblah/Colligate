@@ -17,7 +17,7 @@ class Downloader
 			jsontemp = JSON.parse(Net::HTTP.get(uri)) # Parse JSON to ruby object.
 
 			@dataURL = jsontemp["files"][0]["url"]
-			$lastModified = jsontemp["files"][0]["lastModified"]
+			$lastModified = jsontemp["files"][0]["lastModified"]/1000
 
 			puts @dataURL
 

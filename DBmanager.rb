@@ -14,12 +14,12 @@ class DBmanager
 			if(not File.exist?("Auctions.db"))
 				@db = SQLite3::Database.new "Auctions.db"
 
-				@db.execute("CREATE TABLE Alliance (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,timestamp bigint NULL, PRIMARY KEY (auctionNumber))")
-				@db.execute("CREATE TABLE AllianceLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,timestamp bigint NULL, PRIMARY KEY (auctionNumber))")
-				@db.execute("CREATE TABLE Horde (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,timestamp bigint NULL, PRIMARY KEY (auctionNumber))")
-				@db.execute("CREATE TABLE HordeLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,timestamp bigint NULL, PRIMARY KEY (auctionNumber))")
-				@db.execute("CREATE TABLE Neutral (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,timestamp bigint NULL, PRIMARY KEY (auctionNumber))")
-				@db.execute("CREATE TABLE NeutralLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,timestamp bigint NULL, PRIMARY KEY (auctionNumber))")
+				@db.execute("CREATE TABLE Alliance (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
+				@db.execute("CREATE TABLE AllianceLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
+				@db.execute("CREATE TABLE Horde (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
+				@db.execute("CREATE TABLE HordeLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
+				@db.execute("CREATE TABLE Neutral (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
+				@db.execute("CREATE TABLE NeutralLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
 			end
 
 			
@@ -45,7 +45,7 @@ class DBmanager
 		
 
 	end
-	#Writes the loaded aucitons into the SQLite3 database
+	# Writes the loaded aucitons into the SQLite3 database
 	def writeAuctionsToDB
 
 		begin
@@ -61,7 +61,7 @@ class DBmanager
 			auctions["alliance"]["auctions"].each do |auction|
 
 				
-				@db.execute("INSERT OR IGNORE INTO Alliance values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :timestamp)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "timestamp" => $lastModified)
+				@db.execute("INSERT OR IGNORE INTO Alliance values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified , :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified)
 
 			end
 
@@ -69,7 +69,7 @@ class DBmanager
 
 			auctions["alliance"]["auctions"].each do |auction|
 
-				@db.execute("UPDATE Alliance SET bid = :bid, timeLeft = :timeLeft, timestamp = :timestamp WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "timestamp" => $lastModified, "auctionNumber" => auction["auc"])	
+				@db.execute("UPDATE Alliance SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified, "auctionNumber" => auction["auc"])	
 
 			end
 
@@ -78,7 +78,7 @@ class DBmanager
 			auctions["horde"]["auctions"].each do |auction|
 
 				
-				@db.execute("INSERT OR IGNORE INTO Horde values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :timestamp)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "timestamp" => $lastModified)
+				@db.execute("INSERT OR IGNORE INTO Horde values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified, :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified)
 
 			end
 
@@ -86,7 +86,7 @@ class DBmanager
 
 			auctions["horde"]["auctions"].each do |auction|
 
-				@db.execute("UPDATE Horde SET bid = :bid, timeLeft = :timeLeft, timestamp = :timestamp WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "timestamp" => $lastModified, "auctionNumber" => auction["auc"])	
+				@db.execute("UPDATE Horde SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified, "auctionNumber" => auction["auc"])	
 
 			end
 
@@ -95,7 +95,7 @@ class DBmanager
 			auctions["neutral"]["auctions"].each do |auction|
 
 				
-				@db.execute("INSERT OR IGNORE INTO Neutral values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :timestamp)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "timestamp" => $lastModified)
+				@db.execute("INSERT OR IGNORE INTO Neutral values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified, :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified)
 
 			end
 
@@ -103,7 +103,7 @@ class DBmanager
 
 			auctions["neutral"]["auctions"].each do |auction|
 
-				@db.execute("UPDATE Neutral SET bid = :bid, timeLeft = :timeLeft, timestamp = :timestamp WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "timestamp" => $lastModified, "auctionNumber" => auction["auc"])	
+				@db.execute("UPDATE Neutral SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified, "auctionNumber" => auction["auc"])	
 
 			end
 
@@ -126,14 +126,14 @@ class DBmanager
 
 			puts "Deleting expired auctions."
 
-			@db.execute("delete FROM Alliance WHERE timestamp !=:timestamp", "timestamp" => $lastModified)
-			@db.execute("delete FROM Horde WHERE timestamp !=:timestamp", "timestamp" => $lastModified)
-			@db.execute("delete FROM Neutral WHERE timestamp !=:timestamp", "timestamp" => $lastModified)
+			@db.execute("delete FROM Alliance WHERE lastmodified !=:lastmodified", "lastmodified" => $lastModified)
+			@db.execute("delete FROM Horde WHERE lastmodified !=:lastmodified", "lastmodified" => $lastModified)
+			@db.execute("delete FROM Neutral WHERE lastmodified !=:lastmodified", "lastmodified" => $lastModified)
 
 
 		else
 
-			puts "Please download new auction data to get an up-to-date timestamp."
+			puts "Please download new auction data to get an up-to-date lastmodified."
 
 		end
 
@@ -145,9 +145,9 @@ class DBmanager
 
 		puts "Moving old Auctions to log."
 
-		@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE timestamp != 0 AND timestamp < :lastModified", "lastModified" => $lastModified)
-		@db.execute("INSERT OR IGNORE INTO HordeLog SELECT * FROM Horde WHERE timestamp != 0 AND timestamp < :lastModified", "lastModified" => $lastModified)
-		@db.execute("INSERT OR IGNORE INTO NeutralLog SELECT * FROM Neutral WHERE timestamp != 0 AND timestamp < :lastModified", "lastModified" => $lastModified)
+		@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => $lastModified)
+		@db.execute("INSERT OR IGNORE INTO HordeLog SELECT * FROM Horde WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => $lastModified)
+		@db.execute("INSERT OR IGNORE INTO NeutralLog SELECT * FROM Neutral WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => $lastModified)
 		
 	end
 
