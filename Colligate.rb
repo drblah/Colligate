@@ -1,11 +1,13 @@
 # encoding: utf-8
 require_relative "Downloader"
 require_relative "DBmanager"
+require_relative "Charter"
 
 $lastModified = 0
 
 downloader = Downloader.new("eu.battle.net","argent-dawn")
 dbhandeler = DBmanager.new()
+charter = Charter.new()
 
 #Command line input parser
 
@@ -19,6 +21,7 @@ while true
 	puts("3. Store auctions into the database")
 	puts("4. Download, Load and store")
 	puts("5. AutoMode")
+	puts("6. Test")
 	puts("0. Exit program\n")
 	
 
@@ -60,6 +63,10 @@ while true
 		dbhandeler.moveoldtolog
 		dbhandeler.deleteold
 		exit
+
+	when "6"
+		
+		dbhandeler.test
 
 	when "0"
 		exit
