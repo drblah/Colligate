@@ -1,7 +1,6 @@
 # encoding: utf-8
 require "sqlite3"
 require "json"
-require "pp"
 # This class will handle all calls to the database.
 class DBmanager
 
@@ -154,12 +153,12 @@ class DBmanager
 
 	def test
 
-		puts @db.execute("SELECT item FROM AllianceLog").length
-		puts @db.execute("SELECT DISTINCT item FROM AllianceLog").length
-
-
-		#puts @db.execute("SELECT DISTINCT item FROM Horde").length
-		#puts @db.execute("SELECT DISTINCT item FROM Neutral").length
+		puts "Items in AllianceLog:"
+		puts @db.execute("SELECT COUNT(*) item FROM AllianceLog")[0]
+		puts "Items in HordeLog:"
+		puts @db.execute("SELECT COUNT(*) item FROM HordeLog")[0]
+		puts "Items in NeutralLog:"
+		puts @db.execute("SELECT COUNT(*) item FROM NeutralLog")[0]
 
 	end
 
