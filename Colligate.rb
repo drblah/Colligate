@@ -1,13 +1,11 @@
 # encoding: utf-8
 require_relative "Downloader"
 require_relative "DBmanager"
-require_relative "Charter"
 
 $lastModified = 0
 
 downloader = Downloader.new("eu.battle.net","argent-dawn")
 dbhandeler = DBmanager.new()
-charter = Charter.new()
 
 #Command line input parser
 
@@ -66,7 +64,7 @@ while true
 
 	when "6"
 		
-		dbhandeler.test
+		dbhandeler.insertItem(28104, downloader.getItemName(28104)) if not dbhandeler.itemExistsInDB?(28104)
 
 	when "0"
 		exit

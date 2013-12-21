@@ -25,6 +25,7 @@ class Downloader
 
 		rescue Exception => e
 			
+			puts "Failed to get the Auction data URL."
 			puts e
 
 		end
@@ -45,9 +46,28 @@ class Downloader
 
 		rescue Exception => e
 			
+			puts "Failed to download the Auction JSON data."
 			puts e
 
 		end
 
+	end
+
+	def getItemName(itemID)
+
+		begin
+			uri = URI("http://" + @region + "/api/wow/item/" + String(itemID))
+
+			itemJSON = JSON.parse(Net::HTTP.get(uri))
+
+			return itemJSON["name"]
+
+
+		rescue Exception => e
+			
+			puts "Failed to resolve itemID remotely."
+			puts e
+
+		end
 	end
 end
