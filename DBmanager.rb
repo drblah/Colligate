@@ -19,6 +19,7 @@ class DBmanager
 				@db.execute("CREATE TABLE HordeLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
 				@db.execute("CREATE TABLE Neutral (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
 				@db.execute("CREATE TABLE NeutralLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
+				@db.execute("CREATE TABLE Items (id int NOT NULL, Name text NULL, PRIMARY KEY (id))")
 			end
 
 			
@@ -150,15 +151,53 @@ class DBmanager
 		
 	end
 
+	def itemExistsInDB?(itemID)
+
+		begin
+			
+			@db.execute("SELECT COUNT(*) FROM items WHERE id = :id", "id" => itemID) do |item|
+
+				return true if item[0] == 1
+
+				return false
+		
+			end
+
+
+		rescue Exception => e
+			
+			puts "Failed to check if item exists in the database."
+			puts e
+
+		end
+
+	end
+
+	def insertItem(itemID, itemName)
+
+		begin
+			
+			@db.execute("INSERT OR IGNORE INTO items VALUES (:ID, :Name)", "ID" => itemID, "Name" => itemName)
+
+		rescue Exception => e
+			
+			puts "Failed to insert item into database."
+			puts e
+
+		end
+
+
+	end
+
 
 	def test
 
 		puts "Items in AllianceLog:"
-		puts @db.execute("SELECT COUNT(*) item FROM AllianceLog")[0]
+		puts @db.execute("SELECT COUNT(*) item FROM Alliance")[0]
 		puts "Items in HordeLog:"
-		puts @db.execute("SELECT COUNT(*) item FROM HordeLog")[0]
+		puts @db.execute("SELECT COUNT(*) item FROM Horde")[0]
 		puts "Items in NeutralLog:"
-		puts @db.execute("SELECT COUNT(*) item FROM NeutralLog")[0]
+		puts @db.execute("SELECT COUNT(*) item FROM Neutral")[0]
 
 	end
 
