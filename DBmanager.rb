@@ -195,7 +195,7 @@ class DBmanager
 			
 			missingItems = Array.new
 
-			@db.execute("SELECT DISTINCT item FROM Alliance INNER JOIN Items ON Alliance.item!=Items.id LIMIT 10") do |item|
+			@db.execute("SELECT item FROM Alliance EXCEPT SELECT id FROM Items LIMIT 10") do |item|
 
 				missingItems << item
 
