@@ -68,9 +68,9 @@ while true
 
 		missingItems.each do |item|
 
-			puts item[0]
+			#puts item[0]
 
-			#dbhandeler.insertItem(item[0], downloader.getItemName(item[0]))
+			dbhandeler.insertItem(item[0], downloader.getItemName(item[0]))
 
 		end
 
