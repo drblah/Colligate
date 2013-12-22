@@ -189,6 +189,30 @@ class DBmanager
 
 	end
 
+	def itemsNotInDB
+
+		begin
+			
+			missingItems = Array.new
+
+			@db.execute("SELECT DISTINCT item FROM Alliance INNER JOIN Items ON Alliance.item!=Items.id LIMIT 10") do |item|
+
+				missingItems << item
+
+			end
+
+			return missingItems
+
+		rescue Exception => e
+			
+			puts "Failed to determine which items are not in the database."
+			puts e
+
+		end
+
+		
+	end
+
 
 	def test
 

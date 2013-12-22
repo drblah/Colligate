@@ -64,7 +64,17 @@ while true
 
 	when "6"
 		
-		dbhandeler.insertItem(28104, downloader.getItemName(28104)) if not dbhandeler.itemExistsInDB?(28104)
+		missingItems = dbhandeler.itemsNotInDB
+
+		missingItems.each do |item|
+
+			puts item[0]
+
+			#dbhandeler.insertItem(item[0], downloader.getItemName(item[0]))
+
+		end
+
+		#dbhandeler.insertItem(90584, downloader.getItemName(90584)) if not dbhandeler.itemExistsInDB?(90584)
 
 	when "0"
 		exit
