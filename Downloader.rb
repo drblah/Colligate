@@ -53,7 +53,7 @@ class Downloader
 
 	end
 
-	def getItemName(itemID)
+	def getItemName(itemID) # Resolves an item's name from the battle.net api.
 
 		begin
 			uri = URI("http://" + @region + "/api/wow/item/" + String(itemID))

@@ -151,7 +151,7 @@ class DBmanager
 		
 	end
 
-	def itemExistsInDB?(itemID)
+	def itemExistsInDB?(itemID) # Check if a single item exists in the Items table
 
 		begin
 			
@@ -173,7 +173,7 @@ class DBmanager
 
 	end
 
-	def insertItem(itemID, itemName)
+	def insertItem(itemID, itemName) # Inserts an item into the Items table for name resolusion.
 
 		begin
 			
@@ -189,19 +189,32 @@ class DBmanager
 
 	end
 
-	def itemsNotInDB
+	def itemsNotInDB # Returns all times not found in the Items table.
 
 		begin
 			
 			missingItems = Array.new
 
-			@db.execute("SELECT item FROM Alliance EXCEPT SELECT id FROM Items LIMIT 10") do |item|
+			@db.execute("SELECT item FROM Alliance EXCEPT SELECT id FROM Items") do |item|
 
 				missingItems << item
 
 			end
 
-			return missingItems
+			@db.execute("SELECT item FROM Horde EXCEPT SELECT id FROM Items") do |item|
+
+				missingItems << item
+
+			end
+
+
+			@db.execute("SELECT item FROM Neutral EXCEPT SELECT id FROM Items") do |item|
+
+				missingItems << item
+
+			end
+
+			return missingItems.uniq
 
 		rescue Exception => e
 			
