@@ -9,10 +9,8 @@ dbhandeler = DBmanager.new()
 
 #Command line input parser
 
-
-
 while true
-	puts("Please choose an activity:\n\n")
+	puts("\nPlease choose an activity:\n\n")
 
 	puts("1. Download newest data from the server\n")
 	puts("2. Load auctions into memory\n")
@@ -66,15 +64,14 @@ while true
 		
 		missingItems = dbhandeler.itemsNotInDB
 
-		missingItems.each do |item|
+
+		#missingItems.each do |item|
 
 			#puts item[0]
 
-			dbhandeler.insertItem(item[0], downloader.getItemName(item[0]))
+			#dbhandeler.insertItem(item[0], downloader.getItemName(item[0]))
 
-		end
-
-		#dbhandeler.insertItem(90584, downloader.getItemName(90584)) if not dbhandeler.itemExistsInDB?(90584)
+		#end
 
 	when "0"
 		exit
