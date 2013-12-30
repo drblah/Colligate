@@ -19,7 +19,7 @@ class DBmanager
 				@db.execute("CREATE TABLE HordeLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
 				@db.execute("CREATE TABLE Neutral (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
 				@db.execute("CREATE TABLE NeutralLog (auctionNumber bigint NOT NULL,item int NULL,owner text NULL,bid bigint NULL,buyout bigint NULL,quantity int NULL,timeleft Text NULL,createdDate bigint NULL,lastmodified bigint NULL, PRIMARY KEY (auctionNumber))")
-				@db.execute("CREATE TABLE Items (id int NOT NULL, Name text NULL, PRIMARY KEY (id))")
+				@db.execute("CREATE TABLE Items (ID int NOT NULL, Name text NULL, JSON text NULL, PRIMARY KEY (id))")
 			end
 
 			
@@ -155,7 +155,7 @@ class DBmanager
 
 		begin
 			
-			@db.execute("SELECT COUNT(*) FROM items WHERE id = :id", "id" => itemID) do |item|
+			@db.execute("SELECT COUNT(*) FROM items WHERE ID = :ID", "ID" => itemID) do |item|
 
 				return true if item[0] == 1
 
@@ -173,11 +173,11 @@ class DBmanager
 
 	end
 
-	def insertItem(itemID, itemName) # Inserts an item into the Items table for name resolusion.
+	def insertItem(itemID, itemName, itemJSON) # Inserts an item into the Items table for name resolusion.
 
 		begin
 			
-			@db.execute("INSERT OR IGNORE INTO items VALUES (:ID, :Name)", "ID" => itemID, "Name" => itemName)
+			@db.execute("INSERT OR IGNORE INTO items VALUES (:ID, :Name, :JSON)", "ID" => itemID, "Name" => itemName, "JSON" => itemJSON)
 
 		rescue Exception => e
 			
@@ -195,26 +195,26 @@ class DBmanager
 			
 			missingItems = Array.new
 
-			@db.execute("SELECT item FROM Alliance EXCEPT SELECT id FROM Items") do |item|
+			@db.execute("SELECT item FROM Alliance EXCEPT SELECT ID FROM Items") do |item|
 
 				missingItems << item
 
 			end
 
-			@db.execute("SELECT item FROM Horde EXCEPT SELECT id FROM Items") do |item|
+			@db.execute("SELECT item FROM Horde EXCEPT SELECT ID FROM Items") do |item|
 
 				missingItems << item
 
 			end
 
 
-			@db.execute("SELECT item FROM Neutral EXCEPT SELECT id FROM Items") do |item|
+			@db.execute("SELECT item FROM Neutral EXCEPT SELECT ID FROM Items") do |item|
 
 				missingItems << item
 
 			end
 
-			return missingItems.uniq
+			return missingItems.uniq[0..9]
 
 		rescue Exception => e
 			

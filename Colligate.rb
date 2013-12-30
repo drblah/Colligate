@@ -1,4 +1,6 @@
 # encoding: utf-8
+require 'json'
+
 require_relative "Downloader"
 require_relative "DBmanager"
 
@@ -64,14 +66,18 @@ while true
 		
 		missingItems = dbhandeler.itemsNotInDB
 
+		puts missingItems.length
 
-		#missingItems.each do |item|
+		missingItems.each do |item|
 
-			#puts item[0]
+			print "Inseting "
+			puts item[0]
 
-			#dbhandeler.insertItem(item[0], downloader.getItemName(item[0]))
+			nameAndJSON = downloader.getItemJSON(item[0])
 
-		#end
+			dbhandeler.insertItem(item[0], nameAndJSON[0], nameAndJSON[1])
+
+			end
 
 	when "0"
 		exit
