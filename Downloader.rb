@@ -53,15 +53,14 @@ class Downloader
 
 	end
 
-	def getItemName(itemID) # Resolves an item's name from the battle.net api.
+	def getItemJSON(itemID) # Resolves an item's name from the battle.net api.
 
 		begin
 			uri = URI("http://" + @region + "/api/wow/item/" + String(itemID))
 
-			itemJSON = JSON.parse(Net::HTTP.get(uri))
+			itemJSON = Net::HTTP.get(uri)
 
-			return itemJSON["name"]
-
+			return JSON.parse(itemJSON)["name"], itemJSON
 
 		rescue Exception => e
 			
