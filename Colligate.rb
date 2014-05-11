@@ -68,16 +68,20 @@ while true
 
 		puts missingItems.length
 
+		itemJSON = Array.new
+
 		missingItems.each do |item|
 
 			print "Inseting "
 			puts item[0]
 
-			nameAndJSON = downloader.getItemJSON(item[0])
+			itemJSON << downloader.getItemJSON(item[0])
 
-			dbhandeler.insertItem(item[0], nameAndJSON[0], nameAndJSON[1])
+			#dbhandeler.insertItem(item[0], nameAndJSON[0], nameAndJSON[1])
 
-			end
+		end
+
+		dbhandeler.insertMissingItems(missingItems,itemJSON)
 
 	when "0"
 		exit

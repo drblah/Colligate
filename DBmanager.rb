@@ -226,6 +226,20 @@ class DBmanager
 		
 	end
 
+	def insertMissingItems(missingItems,itemJSON)
+
+		@db.transaction
+
+		missingItems.each_with_index do |item,i|
+
+			self.insertItem(item[0], itemJSON[i][0], itemJSON[i][1])
+
+		end
+
+		@db.commit
+		
+	end
+
 
 	def test
 
