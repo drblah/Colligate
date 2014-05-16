@@ -60,6 +60,27 @@ while true
 		dbhandeler.writeAuctionsToDB
 		dbhandeler.moveoldtolog
 		dbhandeler.deleteold
+
+		missingItems = dbhandeler.itemsNotInDB
+
+		puts missingItems.length
+
+		itemJSON = Array.new
+
+		missingItems.each do |item|
+
+			print "Inseting "
+			puts item[0]
+
+			itemJSON << downloader.getItemJSON(item[0])
+
+			#dbhandeler.insertItem(item[0], nameAndJSON[0], nameAndJSON[1])
+
+		end
+
+		dbhandeler.insertMissingItems(missingItems,itemJSON)
+
+
 		exit
 
 	when "6"
