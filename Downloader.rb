@@ -26,6 +26,7 @@ class Downloader
 		rescue Exception => e
 			
 			puts "Failed to get the Auction data URL."
+			puts "Error message from the server:\n\n #{jsontemp}\n\n"
 			puts e
 
 		end

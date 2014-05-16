@@ -214,7 +214,7 @@ class DBmanager
 
 			end
 
-			return missingItems.uniq[0..9]
+			return missingItems.uniq[0..19]
 
 		rescue Exception => e
 			
