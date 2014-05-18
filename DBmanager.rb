@@ -30,7 +30,7 @@ class DBmanager
 		
 		begin
 			#Reads the JSON file containing the auction database download from the server
-
+			puts "Parsing auction JSON."
 			auctions = JSON.parse(File.read("auctionJSONfile.json", :mode => 'r:utf-8'))
 
 
@@ -109,7 +109,6 @@ class DBmanager
 
 		@db.commit
 
-		
 
 		rescue Exception => e
 
