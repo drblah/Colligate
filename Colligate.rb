@@ -4,7 +4,7 @@ require 'json'
 require_relative "Downloader"
 require_relative "DBmanager"
 
-$lastModified = 0
+@lastModified = 0
 
 downloader = Downloader.new("eu.battle.net","argent-dawn")
 dbhandeler = DBmanager.new()
@@ -35,7 +35,13 @@ while true
 
 	case input
 	when "1"
-		downloader.downloadAuctionJSON
+		dataInfo = downloader.getauctionURL
+
+		@lastModified = dataInfo[1]
+
+		downloader.downloadAuctionJSON(dataInfo[0])
+
+		puts @lastModified
 
 	when "2"
 
@@ -43,21 +49,31 @@ while true
 
 	when "3"
 
-		dbhandeler.writeAuctionsToDB
+		dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
 
 	when "4"
 
-		downloader.downloadAuctionJSON
-		dbhandeler.writeAuctionsToDB
-		dbhandeler.moveoldtolog
-		dbhandeler.deleteold
+		dataInfo = downloader.getauctionURL
+
+		@lastModified = dataInfo[1]
+
+		downloader.downloadAuctionJSON(dataInfo[0])
+
+		dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
+		dbhandeler.moveoldtolog(@lastModified)
+		dbhandeler.deleteold(@lastModified)
 
 	when "5"
 
-		downloader.downloadAuctionJSON
-		dbhandeler.writeAuctionsToDB
-		dbhandeler.moveoldtolog
-		dbhandeler.deleteold
+		dataInfo = downloader.getauctionURL
+
+		@lastModified = dataInfo[1]
+
+		downloader.downloadAuctionJSON(dataInfo[0])
+		
+		dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
+		dbhandeler.moveoldtolog(@lastModified)
+		dbhandeler.deleteold(@lastModified)
 
 		missingItems = dbhandeler.itemsNotInDB
 

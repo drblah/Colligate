@@ -16,12 +16,12 @@ class Downloader
 
 			jsontemp = JSON.parse(Net::HTTP.get(uri)) # Parse JSON to ruby object.
 
-			@dataURL = jsontemp["files"][0]["url"]
-			$lastModified = jsontemp["files"][0]["lastModified"]/1000
+			dataURL = jsontemp["files"][0]["url"]
+			lastModified = jsontemp["files"][0]["lastModified"]/1000
 
-			puts @dataURL
+			puts dataURL
 
-			return @dataURL
+			return URI(dataURL),lastModified
 
 		rescue Exception => e
 			
@@ -34,10 +34,9 @@ class Downloader
 		
 	end
 # Downloads the actual auction database file from a specific server. The fileformat is JSON.
-	def downloadAuctionJSON
+	def downloadAuctionJSON(uri)
 
 		begin
-			uri = URI(getauctionURL)
 
 			auctionJSONfile = File.new("auctionJSONfile.json", "w+") # Due to the size of the database it is stored as a file on disk.
 

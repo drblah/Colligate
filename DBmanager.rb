@@ -46,11 +46,16 @@ class DBmanager
 
 	end
 	# Writes the loaded aucitons into the SQLite3 database
-	def writeAuctionsToDB
+	def writeAuctionsToDB(auctions, lastModified)
+
+		if lastModified == 0
+			puts "lastmodified variable not set! Please make sure to load in a fresh set of data."
+			return nil
+		end
 
 		begin
 
-		auctions = readAuctionJSON
+		#auctions = readAuctionJSON
 
 		@db.transaction
 
@@ -61,7 +66,7 @@ class DBmanager
 			auctions["alliance"]["auctions"].each do |auction|
 
 				
-				@db.execute("INSERT OR IGNORE INTO Alliance values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified , :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified)
+				@db.execute("INSERT OR IGNORE INTO Alliance values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified , :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => lastModified)
 
 			end
 
@@ -69,7 +74,7 @@ class DBmanager
 
 			auctions["alliance"]["auctions"].each do |auction|
 
-				@db.execute("UPDATE Alliance SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified, "auctionNumber" => auction["auc"])	
+				@db.execute("UPDATE Alliance SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => lastModified, "auctionNumber" => auction["auc"])	
 
 			end
 
@@ -78,7 +83,7 @@ class DBmanager
 			auctions["horde"]["auctions"].each do |auction|
 
 				
-				@db.execute("INSERT OR IGNORE INTO Horde values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified, :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified)
+				@db.execute("INSERT OR IGNORE INTO Horde values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified, :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => lastModified)
 
 			end
 
@@ -86,7 +91,7 @@ class DBmanager
 
 			auctions["horde"]["auctions"].each do |auction|
 
-				@db.execute("UPDATE Horde SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified, "auctionNumber" => auction["auc"])	
+				@db.execute("UPDATE Horde SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => lastModified, "auctionNumber" => auction["auc"])	
 
 			end
 
@@ -95,7 +100,7 @@ class DBmanager
 			auctions["neutral"]["auctions"].each do |auction|
 
 				
-				@db.execute("INSERT OR IGNORE INTO Neutral values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified, :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified)
+				@db.execute("INSERT OR IGNORE INTO Neutral values ( :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :lastmodified, :lastmodified)", "auctionNumber" => auction["auc"], "item" => auction["item"], "owner" => auction["owner"], "bid" => auction["bid"], "buyout" => auction["buyout"], "quantity" => auction["quantity"], "timeLeft" => auction["timeLeft"], "lastmodified" => lastModified)
 
 			end
 
@@ -103,7 +108,7 @@ class DBmanager
 
 			auctions["neutral"]["auctions"].each do |auction|
 
-				@db.execute("UPDATE Neutral SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => $lastModified, "auctionNumber" => auction["auc"])	
+				@db.execute("UPDATE Neutral SET bid = :bid, timeLeft = :timeLeft, lastmodified = :lastmodified WHERE auctionNumber = :auctionNumber", "bid" => auction["bid"], "timeLeft" => auction["timeLeft"], "lastmodified" => lastModified, "auctionNumber" => auction["auc"])	
 
 			end
 
@@ -119,15 +124,15 @@ class DBmanager
 	end
 
 
-	def deleteold
+	def deleteold(lastModified)
 
-		if($lastModified !=0)
+		if(lastModified !=0)
 
 			puts "Deleting expired auctions."
 
-			@db.execute("delete FROM Alliance WHERE lastmodified !=:lastmodified", "lastmodified" => $lastModified)
-			@db.execute("delete FROM Horde WHERE lastmodified !=:lastmodified", "lastmodified" => $lastModified)
-			@db.execute("delete FROM Neutral WHERE lastmodified !=:lastmodified", "lastmodified" => $lastModified)
+			@db.execute("delete FROM Alliance WHERE lastmodified !=:lastmodified", "lastmodified" => lastModified)
+			@db.execute("delete FROM Horde WHERE lastmodified !=:lastmodified", "lastmodified" => lastModified)
+			@db.execute("delete FROM Neutral WHERE lastmodified !=:lastmodified", "lastmodified" => lastModified)
 
 
 		else
@@ -140,13 +145,13 @@ class DBmanager
 	end
 
 
-	def moveoldtolog
+	def moveoldtolog(lastModified)
 
 		puts "Moving old Auctions to log."
 
-		@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => $lastModified)
-		@db.execute("INSERT OR IGNORE INTO HordeLog SELECT * FROM Horde WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => $lastModified)
-		@db.execute("INSERT OR IGNORE INTO NeutralLog SELECT * FROM Neutral WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => $lastModified)
+		@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
+		@db.execute("INSERT OR IGNORE INTO HordeLog SELECT * FROM Horde WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
+		@db.execute("INSERT OR IGNORE INTO NeutralLog SELECT * FROM Neutral WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
 		
 	end
 
