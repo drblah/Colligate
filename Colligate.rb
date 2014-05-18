@@ -48,7 +48,6 @@ while true
 	when "4"
 
 		downloader.downloadAuctionJSON
-		dbhandeler.readAuctionJSON
 		dbhandeler.writeAuctionsToDB
 		dbhandeler.moveoldtolog
 		dbhandeler.deleteold
@@ -56,7 +55,6 @@ while true
 	when "5"
 
 		downloader.downloadAuctionJSON
-		dbhandeler.readAuctionJSON
 		dbhandeler.writeAuctionsToDB
 		dbhandeler.moveoldtolog
 		dbhandeler.deleteold
@@ -85,6 +83,7 @@ while true
 
 	when "6"
 		
+		
 		missingItems = dbhandeler.itemsNotInDB
 
 		puts missingItems.length
@@ -103,6 +102,7 @@ while true
 		end
 
 		dbhandeler.insertMissingItems(missingItems,itemJSON)
+
 
 	when "0"
 		exit
