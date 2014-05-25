@@ -1,6 +1,7 @@
 # encoding: utf-8
 require "json"
 require "net/http"
+require "date"
 
 # The Downloader class handels all HTTP requests required to download auctions
 class Downloader
@@ -19,7 +20,7 @@ class Downloader
 			dataURL = jsontemp["files"][0]["url"]
 			lastModified = jsontemp["files"][0]["lastModified"]/1000
 
-			puts "Successfully retrived data URL for #{uri}\n URL: #{dataURL}"
+			puts "Successfully retrived data URL for #{uri}\n URL: #{dataURL}\n Latest data is from #{Time.at(lastModified).to_datetime}"
 
 			return URI(dataURL),lastModified
 

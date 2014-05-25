@@ -41,8 +41,6 @@ while true
 
 		downloader.downloadAuctionJSON(dataInfo[0])
 
-		puts @lastModified
-
 	when "2"
 
 		dbhandeler.readAuctionJSON
