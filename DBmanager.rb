@@ -33,8 +33,10 @@ class DBmanager
 			puts "Parsing auction JSON."
 			auctions = JSON.parse(File.read("auctionJSONfile.json", :mode => 'r:utf-8'))
 
+			puts "Auction JSON successfully parsed."
 
 			return auctions
+
 		rescue Exception => e
 			
 			puts e
@@ -114,6 +116,7 @@ class DBmanager
 
 		@db.commit
 
+		puts "Auction import complete."
 
 		rescue Exception => e
 
@@ -134,6 +137,7 @@ class DBmanager
 			@db.execute("delete FROM Horde WHERE lastmodified !=:lastmodified", "lastmodified" => lastModified)
 			@db.execute("delete FROM Neutral WHERE lastmodified !=:lastmodified", "lastmodified" => lastModified)
 
+			puts "Old auctions has been deleted form the database."
 
 		else
 
@@ -147,11 +151,23 @@ class DBmanager
 
 	def moveoldtolog(lastModified)
 
-		puts "Moving old Auctions to log."
+		begin
+			
+			puts "Moving old auctions to log."
 
-		@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
-		@db.execute("INSERT OR IGNORE INTO HordeLog SELECT * FROM Horde WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
-		@db.execute("INSERT OR IGNORE INTO NeutralLog SELECT * FROM Neutral WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
+			@db.execute("INSERT OR IGNORE INTO AllianceLog SELECT * FROM Alliance WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
+			@db.execute("INSERT OR IGNORE INTO HordeLog SELECT * FROM Horde WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
+			@db.execute("INSERT OR IGNORE INTO NeutralLog SELECT * FROM Neutral WHERE lastmodified != 0 AND lastmodified < :lastModified", "lastModified" => lastModified)
+
+			puts "Successfully moved all old auctions to the log tables."
+
+		rescue Exception => e
+			
+			puts e
+
+		end
+
+			
 		
 	end
 
