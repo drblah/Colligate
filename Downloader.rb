@@ -19,7 +19,7 @@ class Downloader
 			dataURL = jsontemp["files"][0]["url"]
 			lastModified = jsontemp["files"][0]["lastModified"]/1000
 
-			puts dataURL
+			puts "Successfully retrived data URL for #{uri}\n URL: #{dataURL}"
 
 			return URI(dataURL),lastModified
 
@@ -43,6 +43,7 @@ class Downloader
 			auctionJSONfile.write(Net::HTTP.get(uri))
 			auctionJSONfile.close()
 
+			puts "Successfully downloaded auction data."
 
 		rescue Exception => e
 			
@@ -59,6 +60,8 @@ class Downloader
 			uri = URI("http://" + @region + "/api/wow/item/" + String(itemID))
 
 			itemJSON = Net::HTTP.get(uri)
+
+			puts "Successfully retrived item JSON."
 
 			return JSON.parse(itemJSON)["name"], itemJSON
 
