@@ -20,7 +20,7 @@ class Downloader
 			dataURL = jsontemp["files"][0]["url"]
 			lastModified = jsontemp["files"][0]["lastModified"]/1000
 
-			puts "Successfully retrived data URL for #{uri}\n URL: #{dataURL}\n Latest data is from #{Time.at(lastModified).to_datetime}"
+			puts "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{Time.at(lastModified).to_datetime}"
 
 			return URI(dataURL),lastModified
 
