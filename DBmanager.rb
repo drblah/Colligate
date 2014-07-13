@@ -26,6 +26,16 @@ class DBmanager
 								 bidCount int DEFAULT 0,
 								 PRIMARY KEY (auctionNumber))")
 
+				@db.execute("CREATE TRIGGER AbidCounter
+									AFTER UPDATE
+									ON Alliance
+								BEGIN
+									UPDATE Alliance 
+									SET bidCount = bidCount + 1
+									WHERE bid > OLD.bid AND NEW.auctionNumber = auctionNumber;
+								END")
+
+
 				@db.execute("CREATE TABLE AllianceLog (
 								 auctionNumber bigint NOT NULL,
 								 item int NULL,
@@ -51,6 +61,15 @@ class DBmanager
 								 lastmodified bigint NULL, 
 								 bidCount int DEFAULT 0,
 								 PRIMARY KEY (auctionNumber))")
+
+				@db.execute("CREATE TRIGGER HbidCounter
+									AFTER UPDATE
+									ON Horde
+								BEGIN
+									UPDATE Horde 
+									SET bidCount = bidCount + 1
+									WHERE bid > OLD.bid AND NEW.auctionNumber = auctionNumber;
+								END")
 				
 				@db.execute("CREATE TABLE HordeLog (
 								 auctionNumber bigint NOT NULL,
@@ -77,6 +96,16 @@ class DBmanager
 								 lastmodified bigint NULL, 
 								 bidCount int DEFAULT 0,
 								 PRIMARY KEY (auctionNumber))")
+
+				@db.execute("CREATE TRIGGER NbidCounter
+									AFTER UPDATE
+									ON Neutral
+								BEGIN
+									UPDATE Neutral 
+									SET bidCount = bidCount + 1
+									WHERE bid > OLD.bid AND NEW.auctionNumber = auctionNumber;
+								END")
+
 				
 				@db.execute("CREATE TABLE NeutralLog (
 								 auctionNumber bigint NOT NULL,
@@ -299,9 +328,13 @@ class DBmanager
 
 		puts "Auction import complete."
 
+		return true
+
 		rescue Exception => e
 
 			puts e
+
+			return false
 
 		end
 
@@ -328,9 +361,13 @@ class DBmanager
 
 			puts "Old auctions has been deleted form the database."
 
+			return true
+
 		else
 
 			puts "Please download new auction data to get an up-to-date lastmodified."
+
+			return false
 
 		end
 
@@ -359,9 +396,13 @@ class DBmanager
 
 			puts "Successfully moved all old auctions to the log tables."
 
+			return true
+
 		rescue Exception => e
 			
 			puts e
+
+			return false
 
 		end
 
