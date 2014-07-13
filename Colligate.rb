@@ -57,9 +57,16 @@ while true
 
 		downloader.downloadAuctionJSON(dataInfo[0])
 
-		dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
-		dbhandeler.moveoldtolog(@lastModified)
-		dbhandeler.deleteold(@lastModified)
+
+		success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
+
+		if success
+			success = dbhandeler.moveoldtolog(@lastModified)	
+		end
+
+		if success
+			dbhandeler.deleteold(@lastModified)
+		end
 
 	when "5"
 
@@ -68,10 +75,20 @@ while true
 		@lastModified = dataInfo[1]
 
 		downloader.downloadAuctionJSON(dataInfo[0])
+
+		success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
 		
-		dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
-		dbhandeler.moveoldtolog(@lastModified)
-		dbhandeler.deleteold(@lastModified)
+		if success
+		
+			success = dbhandeler.moveoldtolog(@lastModified)
+
+		end
+
+		if success
+			
+			dbhandeler.deleteold(@lastModified)
+
+		end
 
 		missingItems = dbhandeler.itemsNotInDB
 
@@ -85,8 +102,6 @@ while true
 			puts item[0]
 
 			itemJSON << downloader.getItemJSON(item[0])
-
-			#dbhandeler.insertItem(item[0], nameAndJSON[0], nameAndJSON[1])
 
 		end
 
