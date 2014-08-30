@@ -70,45 +70,65 @@ while true
 
 	when "5"
 
-		dataInfo = downloader.getauctionURL
+		oldLastModified = 0
 
-		@lastModified = dataInfo[1]
-
-		downloader.downloadAuctionJSON(dataInfo[0])
-
-		success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
+		while true
 		
-		if success
-		
-			success = dbhandeler.moveoldtolog(@lastModified)
+			puts "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
+
+			dataInfo = downloader.getauctionURL
+
+			@lastModified = dataInfo[1]
+
+			if @lastModified > oldLastModified
+
+				puts "New data is available. Beginning work..."
+
+				oldLastModified = @lastModified
+				
+				downloader.downloadAuctionJSON(dataInfo[0])
+
+				success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
+				
+				if success
+				
+					success = dbhandeler.moveoldtolog(@lastModified)
+
+				end
+
+				if success
+					
+					dbhandeler.deleteold(@lastModified)
+
+				end
+
+				missingItems = dbhandeler.itemsNotInDB
+
+				puts missingItems.length
+
+				itemJSON = Array.new
+
+				missingItems.each do |item|
+
+					print "Inseting "
+					puts item[0]
+
+					itemJSON << downloader.getItemJSON(item[0])
+
+				end
+
+				dbhandeler.insertMissingItems(missingItems,itemJSON)
+
+			else
+
+				puts "Nothing new yet."
+
+			end
+			GC.start
+			puts "Sleeping..."
+			sleep(300)
 
 		end
-
-		if success
-			
-			dbhandeler.deleteold(@lastModified)
-
-		end
-
-		missingItems = dbhandeler.itemsNotInDB
-
-		puts missingItems.length
-
-		itemJSON = Array.new
-
-		missingItems.each do |item|
-
-			print "Inseting "
-			puts item[0]
-
-			itemJSON << downloader.getItemJSON(item[0])
-
-		end
-
-		dbhandeler.insertMissingItems(missingItems,itemJSON)
-
-
-		exit
 
 	when "6"
 		
