@@ -15,12 +15,15 @@ Save the data in a SQLite3 database.
 
 Move outdated auctions to a secondary history database.
 
+Resolve item id numbers to actual item names and item info, such as stats etc.
+
+Store item info in a local cache for faster lookup.
+
 Dependencies
 =================
 This program relies on the following Ruby gems:
 Sqlite3
-JSON
-gchart
+Yajl
 
 How to use
 =================
