@@ -1,5 +1,5 @@
 # encoding: utf-8
-require 'json'
+require 'yajl'
 
 require_relative "Downloader"
 require_relative "DBmanager"

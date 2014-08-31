@@ -1,6 +1,6 @@
 # encoding: utf-8
 require "sqlite3"
-require "json"
+require "yajl"
 # This class will handle all calls to the database.
 class DBmanager
 
@@ -130,6 +130,7 @@ class DBmanager
 				@db.execute("CREATE INDEX almod ON AllianceLog( lastmodified )")
 				@db.execute("CREATE INDEX hlmod ON HordeLog( lastmodified )")
 				@db.execute("CREATE INDEX nlmod ON NeutralLog ( lastmodified )")
+				@db.execute("CREATE INDEX nameidx ON Items ( Name )")
 
 			end
 
@@ -142,7 +143,7 @@ class DBmanager
 		begin
 			#Reads the JSON file containing the auction database download from the server
 			puts "Parsing auction JSON."
-			auctions = JSON.parse(File.read("auctionJSONfile.json", :mode => 'r:utf-8'))
+			auctions = Yajl::Parser.parse(File.read("auctionJSONfile.json", :mode => 'r:utf-8'))
 
 			puts "Auction JSON successfully parsed."
 

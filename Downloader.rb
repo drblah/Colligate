@@ -1,5 +1,5 @@
 # encoding: utf-8
-require "json"
+require "yajl"
 require "net/http"
 require "date"
 
@@ -15,7 +15,7 @@ class Downloader
 		begin
 			uri = URI("http://" + @region + "/api/wow/auction/data/" + @server)
 
-			jsontemp = JSON.parse(Net::HTTP.get(uri)) # Parse JSON to ruby object.
+			jsontemp = Yajl::Parser.parse(Net::HTTP.get(uri)) # Parse JSON to ruby object.
 
 			dataURL = jsontemp["files"][0]["url"]
 			lastModified = jsontemp["files"][0]["lastModified"]/1000
@@ -64,7 +64,7 @@ class Downloader
 
 			puts "Successfully retrived item JSON."
 
-			return JSON.parse(itemJSON)["name"], itemJSON
+			return Yajl::Parser.parse(itemJSON)["name"], itemJSON
 
 		rescue Exception => e
 			
