@@ -1,1 +1,0 @@
-ruby E:\DIV\GitHub\Colligate\Colligate.rb 5

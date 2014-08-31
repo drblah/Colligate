@@ -1,2 +1,0 @@
-ruby Colligate.rb
-pause
