@@ -125,6 +125,12 @@ class DBmanager
 								 Name text NULL, 
 								 JSON text NULL, 
 								 PRIMARY KEY (id))")
+
+
+				@db.execute("CREATE INDEX almod ON AllianceLog( lastmodified )")
+				@db.execute("CREATE INDEX hlmod ON HordeLog( lastmodified )")
+				@db.execute("CREATE INDEX nlmod ON NeutralLog ( lastmodified )")
+
 			end
 
 			
@@ -358,6 +364,19 @@ class DBmanager
 			@db.execute("delete FROM Neutral 
 						 WHERE lastmodified !=:lastmodified",
 						 "lastmodified" => lastModified)
+
+
+			@db.execute("DELETE
+						 FROM AllianceLog
+						 WHERE lastmodified < strftime('%s','now', '-2 months')")
+
+			@db.execute("DELETE
+						 FROM HordeLog
+						 WHERE lastmodified < strftime('%s','now', '-2 months')")
+
+			@db.execute("DELETE
+						 FROM NeutralLog
+						 WHERE lastmodified < strftime('%s','now', '-2 months')")
 
 			puts "Old auctions has been deleted form the database."
 
