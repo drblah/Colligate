@@ -78,7 +78,7 @@ while true
 
 			dataInfo = downloader.getauctionURL
 
-			@lastModified = dataInfo[1]
+			@lastModified = dataInfo[1] if (defined? dataInfo)
 
 			if @lastModified > oldLastModified
 
