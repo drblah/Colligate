@@ -474,20 +474,20 @@ class DBmanager
 
 			missingItems = Array.new
 
-			@db.execute("SELECT item FROM Alliance EXCEPT SELECT ID FROM Items") do |item|
+			@db.execute("SELECT item FROM AllianceLog EXCEPT SELECT ID FROM Items") do |item|
 
 				missingItems << item
 
 			end
 
-			@db.execute("SELECT item FROM Horde EXCEPT SELECT ID FROM Items") do |item|
+			@db.execute("SELECT item FROM HordeLog EXCEPT SELECT ID FROM Items") do |item|
 
 				missingItems << item
 
 			end
 
 
-			@db.execute("SELECT item FROM Neutral EXCEPT SELECT ID FROM Items") do |item|
+			@db.execute("SELECT item FROM NeutralLog EXCEPT SELECT ID FROM Items") do |item|
 
 				missingItems << item
 
