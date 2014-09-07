@@ -115,6 +115,7 @@ while true
 
 					if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
 					
+
 						if bnetdata[0] == nil
 							
 							true
