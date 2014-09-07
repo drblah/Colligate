@@ -112,19 +112,30 @@ while true
 
 					bnetdata = downloader.getItemJSON(item[0])
 
-					if bnetdata[0] == nil
+
+					if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
+					
+						if bnetdata[0] == nil
 							
-						true
+							true
+
+						else
+							
+							print "Inseting "
+							puts item[0]
+
+							itemJSON << bnetdata
+							false
+
+						end
 
 					else
-						
-						print "Inseting "
-						puts item[0]
 
-						itemJSON << bnetdata
-						false
+						true
 
 					end
+
+					
 
 				end
 
