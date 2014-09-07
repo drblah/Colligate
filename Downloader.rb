@@ -62,9 +62,21 @@ class Downloader
 
 			itemJSON = Net::HTTP.get(uri)
 
-			puts "Successfully retrived item JSON."
+			if itemJSON.include? "Internal server error."
+			
+				puts "Failed to retrieve item JSON.\n Error message from the server: #{itemJSON}"
 
-			return Yajl::Parser.parse(itemJSON)["name"], itemJSON
+				return nil, nil
+
+			else
+
+				puts "Successfully retrived item JSON."
+
+				return Yajl::Parser.parse(itemJSON)["name"], itemJSON
+
+			end
+
+			
 
 		rescue Exception => e
 			

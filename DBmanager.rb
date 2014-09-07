@@ -471,7 +471,7 @@ class DBmanager
 	def itemsNotInDB # Returns all times not found in the Items table.
 
 		begin
-			
+
 			missingItems = Array.new
 
 			@db.execute("SELECT item FROM Alliance EXCEPT SELECT ID FROM Items") do |item|

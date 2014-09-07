@@ -104,16 +104,27 @@ while true
 
 				missingItems = dbhandeler.itemsNotInDB
 
-				puts missingItems.length
+				puts "Found #{missingItems.length} items not in item cache."
 
 				itemJSON = Array.new
 
-				missingItems.each do |item|
+				missingItems.delete_if do |item|
 
-					print "Inseting "
-					puts item[0]
+					bnetdata = downloader.getItemJSON(item[0])
 
-					itemJSON << downloader.getItemJSON(item[0])
+					if bnetdata[0] == nil
+							
+						true
+
+					else
+						
+						print "Inseting "
+						puts item[0]
+
+						itemJSON << bnetdata
+						false
+
+					end
 
 				end
 
