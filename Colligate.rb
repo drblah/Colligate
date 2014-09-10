@@ -4,11 +4,6 @@ require 'yajl'
 require_relative "Downloader"
 require_relative "DBmanager"
 
-@lastModified = 0
-
-downloader = Downloader.new("eu.battle.net","argent-dawn")
-dbhandeler = DBmanager.new()
-
 #Command line input parser
 
 while true
@@ -32,7 +27,12 @@ while true
 
 	when "1"
 
+		downloader = Downloader.new("eu.battle.net","argent-dawn")
+		dbhandeler = DBmanager.new("eu", "argent-dawn")
+
+		lastModified = 0
 		oldLastModified = 0
+
 
 		while true
 		
@@ -40,27 +40,27 @@ while true
 
 			dataInfo = downloader.getauctionURL
 
-			@lastModified = dataInfo[1] if (defined? dataInfo)
+			lastModified = dataInfo[1] if (defined? dataInfo)
 
-			if @lastModified > oldLastModified
+			if lastModified > oldLastModified
 
 				puts "New data is available. Beginning work..."
 
-				oldLastModified = @lastModified
+				oldLastModified = lastModified
 				
 				downloader.downloadAuctionJSON(dataInfo[0])
 
-				success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,@lastModified)
+				success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,lastModified)
 				
 				if success
 				
-					success = dbhandeler.moveoldtolog(@lastModified)
+					success = dbhandeler.moveoldtolog(lastModified)
 
 				end
 
 				if success
 					
-					dbhandeler.deleteold(@lastModified)
+					dbhandeler.deleteold(lastModified)
 
 				end
 

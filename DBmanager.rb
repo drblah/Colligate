@@ -1,17 +1,22 @@
 # encoding: utf-8
 require "sqlite3"
 require "yajl"
+require "fileutils"
 # This class will handle all calls to the database.
 class DBmanager
 
-	def initialize()
-			
+	def initialize(region, realm)
+
+			dbPath = "databases/#{region}/#{realm}/#{realm}.db"
+
 			# Open database if it exists.
-			@db = SQLite3::Database.open "Auctions.db" if File.exist?("Auctions.db")
+			@db = SQLite3::Database.open dbPath if File.exist?(dbPath)
 			
 			# Create database and the tables if the database does not exist
-			if(not File.exist?("Auctions.db"))
-				@db = SQLite3::Database.new "Auctions.db"
+			if(not File.exist?(dbPath))
+				FileUtils::mkdir_p "databases/#{region}/#{realm}"
+				puts dbPath
+				@db = SQLite3::Database.new dbPath
 
 				@db.execute("CREATE TABLE Alliance (
 								 auctionNumber bigint NOT NULL,

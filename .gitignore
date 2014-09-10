@@ -165,3 +165,4 @@ pip-log.txt
 # Colligate stuff
 auctionJSONfile.json
 Auctions.db
+databases/
