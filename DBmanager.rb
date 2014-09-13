@@ -2,11 +2,14 @@
 require "sqlite3"
 require "yajl"
 require "fileutils"
+require "logger"
+
 # This class will handle all calls to the database.
 class DBmanager
 
 	def initialize(region, realm)
 
+			@log = Logger.new("log.log")
 			dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
 			# Open database if it exists.
@@ -148,15 +151,19 @@ class DBmanager
 		begin
 			#Reads the JSON file containing the auction database download from the server
 			puts "Parsing auction JSON."
+			@log.info "Parsing auction JSON."
 			auctions = Yajl::Parser.parse(File.read("auctionJSONfile.json", :mode => 'r:utf-8'))
 
 			puts "Auction JSON successfully parsed."
+			@log.info "Auction JSON successfully parsed."
+
 
 			return auctions
 
 		rescue Exception => e
-			
-			puts e
+			puts "Failed to parse auction JSON\n #{e}"
+			@log.error "Failed to parse auction JSON\n #{e}"
+
 
 			return nil
 
@@ -169,18 +176,16 @@ class DBmanager
 
 		if lastModified == 0
 			puts "lastmodified variable not set! Please make sure to load in a fresh set of data."
+			@log.warn "lastmodified variable not set! Please make sure to load in a fresh set of data."
 			return nil
 		end
 
 		begin
 
-		#auctions = readAuctionJSON
-
 		@db.transaction
 
-		#@db.execute("INSERT INTO Alliance values ( ?, ?, ?, ?, ?, ?, ?, ?)", auctions["alliance"]["auctions"][0]["auc"], auctions["alliance"]["auctions"][0]["item"], auctions["alliance"]["auctions"][0]["owner"], auctions["alliance"]["auctions"][0]["bid"], auctions["alliance"]["auctions"][0]["buyout"], auctions["alliance"]["auctions"][0]["quantity"], auctions["alliance"]["auctions"][0]["timeLeft"], 10)
-
 			puts "Loading new Alliance auctions into database."
+			@log.info "Loading new Alliance auctions into database."
 
 			auctions["alliance"]["auctions"].each do |auction|
 
@@ -217,6 +222,7 @@ class DBmanager
 			end
 
 			puts "Updating existing Alliance auctions."
+			@log.info "Updating existing Alliance auctions."
 
 			auctions["alliance"]["auctions"].each do |auction|
 
@@ -233,6 +239,8 @@ class DBmanager
 			end
 
 			puts "Loading new Horde auctions into database."
+			@log.info "Loading new Horde auctions into database."
+
 
 			auctions["horde"]["auctions"].each do |auction|
 
@@ -269,6 +277,7 @@ class DBmanager
 			end
 
 			puts "Updating existing Horde auctions."
+			@log.info "Updating existing Horde auctions."
 
 			auctions["horde"]["auctions"].each do |auction|
 
@@ -285,6 +294,7 @@ class DBmanager
 			end
 
 			puts "Loading new Neutral auctions into database."
+			@log.info "Loading new Neutral auctions into database."
 
 			auctions["neutral"]["auctions"].each do |auction|
 
@@ -321,6 +331,7 @@ class DBmanager
 			end
 
 			puts "Updating existing Neutral auctions."
+			@log.info "Updating existing Neutral auctions."
 
 			auctions["neutral"]["auctions"].each do |auction|
 
@@ -339,12 +350,14 @@ class DBmanager
 		@db.commit
 
 		puts "Auction import complete."
+		@log.info "Auction import complete."
 
 		return true
 
 		rescue Exception => e
 
-			puts e
+			puts "Failed to import auctions\n #{e}"
+			@log.error "Failed to import auctions\n #{e}"
 
 			return false
 
@@ -358,6 +371,9 @@ class DBmanager
 		if(lastModified !=0)
 
 			puts "Deleting expired auctions."
+			@log.info "Deleting expired auctions."
+
+			@db.transaction
 
 			@db.execute("delete FROM Alliance 
 						 WHERE lastmodified !=:lastmodified",
@@ -384,13 +400,17 @@ class DBmanager
 						 FROM NeutralLog
 						 WHERE lastmodified < strftime('%s','now', '-2 months')")
 
+			@db.commit
+
 			puts "Old auctions has been deleted form the database."
+			@log.info "Old auctions has been deleted form the database."
 
 			return true
 
 		else
 
 			puts "Please download new auction data to get an up-to-date lastmodified."
+			@log.warn "Please download new auction data to get an up-to-date lastmodified."
 
 			return false
 
@@ -405,6 +425,7 @@ class DBmanager
 		begin
 			
 			puts "Moving old auctions to log."
+			@log.info "Moving old auctions to log."
 
 			@db.execute("INSERT OR IGNORE INTO AllianceLog 
 							 SELECT * FROM Alliance 
@@ -420,12 +441,14 @@ class DBmanager
 							 "lastModified" => lastModified)
 
 			puts "Successfully moved all old auctions to the log tables."
+			@log.info "Successfully moved all old auctions to the log tables."
 
 			return true
 
 		rescue Exception => e
 			
-			puts e
+			puts "Failed to move old auctions to log table\ #{e}"
+			@log.error "Failed to move old auctions to log table\ #{e}"
 
 			return false
 
@@ -465,8 +488,8 @@ class DBmanager
 
 		rescue Exception => e
 			
-			puts "Failed to insert item into database."
-			puts e
+			puts "Failed to insert item into database.\ #{e}"
+			@log.error "Failed to insert item into database.\ #{e}"
 
 		end
 
@@ -502,8 +525,8 @@ class DBmanager
 
 		rescue Exception => e
 			
-			puts "Failed to determine which items are not in the database."
-			puts e
+			puts "Failed to determine which items are not in the database.\n #{e}"
+			@log.error "Failed to determine which items are not in the database.\n #{e}"
 
 		end
 
