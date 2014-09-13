@@ -1,10 +1,11 @@
 # encoding: utf-8
-require 'yajl'
+require "yajl"
+require "logger"
 
 require_relative "Downloader"
 require_relative "DBmanager"
 
-#Command line input parser
+log = Logger.new("log.log")
 
 while true
 	puts("\nPlease choose an activity:\n\n")
@@ -37,6 +38,7 @@ while true
 		while true
 		
 			puts "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
+			log.info "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
 
 			dataInfo = downloader.getauctionURL
 
@@ -45,6 +47,8 @@ while true
 			if lastModified > oldLastModified
 
 				puts "New data is available. Beginning work..."
+				log.info "New data is available. Beginning work..."
+
 
 				oldLastModified = lastModified
 				
@@ -67,6 +71,7 @@ while true
 				missingItems = dbhandeler.itemsNotInDB
 
 				puts "Found #{missingItems.length} items not in item cache."
+				log.info "Found #{missingItems.length} items not in item cache."
 
 				itemJSON = Array.new
 
@@ -84,8 +89,9 @@ while true
 
 						else
 							
-							print "Inseting "
-							puts item[0]
+							puts "Inserting #{item[0]}"
+							log.info "Inserting #{item[0]}"
+							
 
 							itemJSON << bnetdata
 							false
@@ -107,10 +113,12 @@ while true
 			else
 
 				puts "Nothing new yet."
+				log.info "Nothing new yet."
 
 			end
 			GC.start
 			puts "Sleeping..."
+			log.info "Sleeping..."
 			sleep(300)
 
 		end

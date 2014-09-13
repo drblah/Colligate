@@ -2,11 +2,13 @@
 require "yajl"
 require "net/http"
 require "date"
+require "logger"
 
 # The Downloader class handels all HTTP requests required to download auctions
 class Downloader
 
 	def initialize(region, server)
+		@log = Logger.new("log.log")
 		@region = region # Region can be eu.battle.net for europe ur us.battle.net for us.
 		@server = server # Server or realm. Note that spaces in the realm name is replaced my dash as in: "Argent dawn" becomes "argent-dawn".
 	end
@@ -21,14 +23,18 @@ class Downloader
 			lastModified = jsontemp["files"][0]["lastModified"]/1000
 
 			puts "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{Time.at(lastModified).to_datetime}"
+			@log.info "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{Time.at(lastModified).to_datetime}"
 
 			return URI(dataURL),lastModified
 
 		rescue Exception => e
 			
 			puts "Failed to get the Auction data URL."
+			@log.error "Failed to get the Auction data URL."
 			puts "Error message from the server:\n\n #{jsontemp}\n\n"
+			@log.error "Error message from the server:\n\n #{jsontemp}\n\n"
 			puts e
+			@log.error e
 
 		end
 		
@@ -45,11 +51,12 @@ class Downloader
 			auctionJSONfile.close()
 
 			puts "Successfully downloaded auction data."
+			@log.info "Successfully downloaded auction data."
 
 		rescue Exception => e
 			
-			puts "Failed to download the Auction JSON data."
-			puts e
+			puts "Failed to download the Auction JSON data.\n #{e}"
+			@log.error "Failed to download the Auction JSON data.\n #{e}"
 
 		end
 
@@ -65,12 +72,14 @@ class Downloader
 			if itemJSON.include? "Internal server error."
 			
 				puts "Failed to retrieve item JSON.\n Error message from the server: #{itemJSON}"
+				@log.error "Failed to retrieve item JSON.\n Error message from the server: #{itemJSON}"
 
 				return nil, nil
 
 			elsif itemJSON.include? "unable to get item information."
 				
 				puts "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
+				@log.info "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
 
 				html = Net::HTTP.get(URI("http://www.wowhead.com/item=#{itemID}"))
 
@@ -81,6 +90,7 @@ class Downloader
 			else
 
 				puts "Successfully retrived item JSON."
+				@log.info "Successfully retrived item JSON."
 
 				return Yajl::Parser.parse(itemJSON)["name"], itemJSON
 
@@ -90,8 +100,8 @@ class Downloader
 
 		rescue Exception => e
 			
-			puts "Failed to connect to battle.net"
-			puts e
+			puts "Failed to connect to battle.net\n #{e}"
+			@log.error "Failed to connect to battle.net\n #{e}"
 
 		end
 	end
