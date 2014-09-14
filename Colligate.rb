@@ -42,7 +42,9 @@ while true
 
 			dataInfo = downloader.getauctionURL
 
-			lastModified = dataInfo[1] if (defined? dataInfo)
+			if dataInfo != nil
+				lastModified = dataInfo[1]	
+			end
 
 			if lastModified > oldLastModified
 
@@ -52,9 +54,13 @@ while true
 
 				oldLastModified = lastModified
 				
-				downloader.downloadAuctionJSON(dataInfo[0])
+				success = downloader.downloadAuctionJSON(dataInfo[0])
 
-				success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,lastModified)
+				if success
+				
+					success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,lastModified)
+
+				end
 				
 				if success
 				
@@ -70,12 +76,15 @@ while true
 
 				missingItems = dbhandeler.itemsNotInDB
 
-				puts "Found #{missingItems.length} items not in item cache."
-				log.info "Found #{missingItems.length} items not in item cache."
+				if missingItems != nil
+					
 
-				itemJSON = Array.new
-
-				missingItems.delete_if do |item|
+					puts "Found #{missingItems.length} items not in item cache."
+					log.info "Found #{missingItems.length} items not in item cache."
+	
+					itemJSON = Array.new
+	
+					missingItems.delete_if do |item|
 
 					bnetdata = downloader.getItemJSON(item[0])
 
@@ -103,12 +112,14 @@ while true
 						true
 
 					end
-
-					
+	
+						
+	
+					end
+	
+					dbhandeler.insertMissingItems(missingItems,itemJSON)
 
 				end
-
-				dbhandeler.insertMissingItems(missingItems,itemJSON)
 
 			else
 

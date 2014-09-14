@@ -36,6 +36,8 @@ class Downloader
 			puts e
 			@log.error e
 
+			return nil
+
 		end
 		
 		
@@ -53,10 +55,14 @@ class Downloader
 			puts "Successfully downloaded auction data."
 			@log.info "Successfully downloaded auction data."
 
+			return true
+
 		rescue Exception => e
 			
 			puts "Failed to download the Auction JSON data.\n #{e}"
 			@log.error "Failed to download the Auction JSON data.\n #{e}"
+
+			return false
 
 		end
 
