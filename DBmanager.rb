@@ -402,8 +402,8 @@ class DBmanager
 
 			@db.commit
 
-			puts "Old auctions has been deleted form the database."
-			@log.info "Old auctions has been deleted form the database."
+			puts "Old auctions has been deleted from the database."
+			@log.info "Old auctions has been deleted from the database."
 
 			return true
 
@@ -527,6 +527,8 @@ class DBmanager
 			
 			puts "Failed to determine which items are not in the database.\n #{e}"
 			@log.error "Failed to determine which items are not in the database.\n #{e}"
+
+			return nil
 
 		end
 
