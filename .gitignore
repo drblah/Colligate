@@ -167,3 +167,4 @@ auctionJSONfile.json
 Auctions.db
 databases/
 *.log
+*.json
