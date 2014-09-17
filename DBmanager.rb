@@ -9,6 +9,9 @@ class DBmanager
 
 	def initialize(region, realm)
 
+			@region = region
+			@realm = realm
+
 			@log = Logger.new("log.log")
 			dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
@@ -152,7 +155,7 @@ class DBmanager
 			#Reads the JSON file containing the auction database download from the server
 			puts "Parsing auction JSON."
 			@log.info "Parsing auction JSON."
-			auctions = Yajl::Parser.parse(File.read("auctionJSONfile.json", :mode => 'r:utf-8'))
+			auctions = Yajl::Parser.parse(File.read("#{@region}.#{@realm}.json", :mode => 'r:utf-8'))
 
 			puts "Auction JSON successfully parsed."
 			@log.info "Auction JSON successfully parsed."

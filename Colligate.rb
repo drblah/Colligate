@@ -1,11 +1,14 @@
 # encoding: utf-8
 require "yajl"
 require "logger"
+require "yaml"
 
 require_relative "Downloader"
 require_relative "DBmanager"
 
 log = Logger.new("log.log")
+
+realms = YAML.load_file("settings.yaml")
 
 while true
 	puts("\nPlease choose an activity:\n\n")
@@ -27,114 +30,120 @@ while true
 	case input
 
 	when "1"
-
-		downloader = Downloader.new("eu.battle.net","argent-dawn")
-		dbhandeler = DBmanager.new("eu", "argent-dawn")
-
-		lastModified = 0
-		oldLastModified = 0
-
-
 		while true
-		
-			puts "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
-			log.info "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
+		#downloader = Downloader.new("eu","argent-dawn")
+		#dbhandeler = DBmanager.new("eu", "argent-dawn")
+		threads = []
+			realms.each do |r|
 
-			dataInfo = downloader.getauctionURL
+				threads << Thread.new {
 
-			if dataInfo != nil
-				lastModified = dataInfo[1]	
-			end
+				downloader = Downloader.new(r["region"], r["realm"])
+				dbhandeler = DBmanager.new(r["region"], r["realm"])
 
-			if lastModified > oldLastModified
-
-				puts "New data is available. Beginning work..."
-				log.info "New data is available. Beginning work..."
-
-
-				oldLastModified = lastModified
+				lastModified = 0
+				oldLastModified = 0
 				
-				success = downloader.downloadAuctionJSON(dataInfo[0])
+					puts "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
+					log.info "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
 
-				if success
-				
-					success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,lastModified)
+					dataInfo = downloader.getauctionURL
 
-				end
-				
-				if success
-				
-					success = dbhandeler.moveoldtolog(lastModified)
+					if dataInfo != nil
+						lastModified = dataInfo[1]	
+					end
 
-				end
+					if lastModified > oldLastModified
 
-				if success
-					
-					dbhandeler.deleteold(lastModified)
-
-				end
-
-				missingItems = dbhandeler.itemsNotInDB
-
-				if missingItems != nil
-					
-
-					puts "Found #{missingItems.length} items not in item cache."
-					log.info "Found #{missingItems.length} items not in item cache."
-	
-					itemJSON = Array.new
-	
-					missingItems.delete_if do |item|
-
-					bnetdata = downloader.getItemJSON(item[0])
+						puts "New data is available. Beginning work..."
+						log.info "New data is available. Beginning work..."
 
 
-					if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
-					
+						oldLastModified = lastModified
+						
+						success = downloader.downloadAuctionJSON(dataInfo[0])
 
-						if bnetdata[0] == nil
+						if success
+						
+							success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,lastModified)
+
+						end
+						
+						if success
+						
+							success = dbhandeler.moveoldtolog(lastModified)
+
+						end
+
+						if success
 							
-							true
+							dbhandeler.deleteold(lastModified)
 
-						else
-							
-							puts "Inserting #{item[0]}"
-							log.info "Inserting #{item[0]}"
+						end
+
+						missingItems = dbhandeler.itemsNotInDB
+
+						if missingItems != nil
 							
 
-							itemJSON << bnetdata
-							false
+							puts "Found #{missingItems.length} items not in item cache."
+							log.info "Found #{missingItems.length} items not in item cache."
+			
+							itemJSON = Array.new
+			
+							missingItems.delete_if do |item|
+
+							bnetdata = downloader.getItemJSON(item[0])
+
+
+							if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
+							
+
+								if bnetdata[0] == nil
+									
+									true
+
+								else
+									
+									puts "Inserting #{item[0]}"
+									log.info "Inserting #{item[0]}"
+									
+
+									itemJSON << bnetdata
+									false
+
+								end
+
+							else
+
+								true
+
+							end
+			
+								
+			
+							end
+			
+							dbhandeler.insertMissingItems(missingItems,itemJSON)
 
 						end
 
 					else
 
-						true
+						puts "Nothing new yet."
+						log.info "Nothing new yet."
 
 					end
-	
-						
-	
-					end
-	
-					dbhandeler.insertMissingItems(missingItems,itemJSON)
-
-				end
-
-			else
-
-				puts "Nothing new yet."
-				log.info "Nothing new yet."
-
+				}		
 			end
+			puts "Waiting for #{threads.length} to finish."
+			log.info "Waiting for #{threads.length} to finish."
+			threads.each {|thr| thr.join}
 			GC.start
 			puts "Sleeping..."
 			log.info "Sleeping..."
 			sleep(300)
-
 		end
-
-
 	when "0"
 		exit
 	end
