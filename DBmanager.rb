@@ -361,6 +361,7 @@ class DBmanager
 
 			puts "Failed to import auctions\n #{e}"
 			@log.error "Failed to import auctions\n #{e}"
+			@db.rollback if @db.transaction_active?
 
 			return false
 
@@ -415,6 +416,7 @@ class DBmanager
 			puts "Please download new auction data to get an up-to-date lastmodified."
 			@log.warn "Please download new auction data to get an up-to-date lastmodified."
 
+			@db.rollback if @db.transaction_active?
 			return false
 
 		end
@@ -429,7 +431,7 @@ class DBmanager
 			
 			puts "Moving old auctions to log."
 			@log.info "Moving old auctions to log."
-
+			@db.transaction
 			@db.execute("INSERT OR IGNORE INTO AllianceLog 
 							 SELECT * FROM Alliance 
 							 WHERE lastmodified != 0 AND lastmodified < :lastModified", 
@@ -442,6 +444,7 @@ class DBmanager
 			@db.execute("INSERT OR IGNORE INTO NeutralLog 
 							 SELECT * FROM Neutral WHERE lastmodified != 0 AND lastmodified < :lastModified", 
 							 "lastModified" => lastModified)
+			@db.commit
 
 			puts "Successfully moved all old auctions to the log tables."
 			@log.info "Successfully moved all old auctions to the log tables."
@@ -452,7 +455,7 @@ class DBmanager
 			
 			puts "Failed to move old auctions to log table\ #{e}"
 			@log.error "Failed to move old auctions to log table\ #{e}"
-
+			@db.rollback if @db.transaction_active?
 			return false
 
 		end
