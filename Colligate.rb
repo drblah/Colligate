@@ -2,6 +2,7 @@
 require "yajl"
 require "logger"
 require "yaml"
+require "work_queue"
 
 require_relative "Downloader"
 require_relative "DBmanager"
@@ -33,10 +34,11 @@ while true
 		while true
 		#downloader = Downloader.new("eu","argent-dawn")
 		#dbhandeler = DBmanager.new("eu", "argent-dawn")
-		threads = []
+		workQueue = WorkQueue.new 4, nil
+
 			realms.each do |r|
 
-				threads << Thread.new {
+				workQueue.enqueue_b {
 
 				downloader = Downloader.new(r["region"], r["realm"])
 				dbhandeler = DBmanager.new(r["region"], r["realm"])
@@ -136,9 +138,9 @@ while true
 					end
 				}		
 			end
-			puts "Waiting for #{threads.length} to finish."
-			log.info "Waiting for #{threads.length} to finish."
-			threads.each {|thr| thr.join}
+			puts "Waiting for threads to finish."
+			log.info "Waiting for threads to finish."
+			workQueue.join
 			GC.start
 			puts "Sleeping..."
 			log.info "Sleeping..."
