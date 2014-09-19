@@ -9,28 +9,19 @@ require_relative "DBmanager"
 
 log = Logger.new("log.log")
 
-realms = YAML.load_file("settings.yaml")
+begin
+
+	realms = YAML.load_file("settings.yaml")
+	
+rescue Exception => e
+	
+	puts "Failed to read settings.yaml. I cannot download data without knowing where to download it from.\n #{e}"
+	exit
+end
+
 
 while true
-	puts("\nPlease choose an activity:\n\n")
 
-	puts("1. Download, Load and store")
-	puts("0. Exit program\n")
-	
-
-	if(ARGV.length == 0)
-
-		input = gets.chomp
-
-	else
-
-		input = ARGV[0]
-
-	end
-
-	case input
-
-	when "1"
 		while true
 		#downloader = Downloader.new("eu","argent-dawn")
 		#dbhandeler = DBmanager.new("eu", "argent-dawn")
@@ -146,8 +137,5 @@ while true
 			log.info "Sleeping..."
 			sleep(300)
 		end
-	when "0"
-		exit
-	end
 
 end
