@@ -21,10 +21,22 @@ Store item info in a local cache for faster lookup.
 
 Dependencies
 =================
-This program relies on the following Ruby gems:
+This program requires on the following Ruby gems:
 Sqlite3
 Yajl
+work_queue
+
+To install run:
+
+```
+gem install sqlite3 yajl-ruby work_queue
+```
 
 How to use
 =================
-Run the main program “Colligate.rb” and follow the CLI.
+Edit settings.yaml to contain the realms you want to monitor.
+Run the main program “Colligate.rb”.
+
+```
+ruby Colligate.rb
+```
