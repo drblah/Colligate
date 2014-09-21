@@ -55,7 +55,7 @@ tw : Taiwan : untested, but should work
 
 Realm names need to be spelled a bit different than usual. An example of that is argent-dawn, which is normally spelled Argent Dawn. I cannot provide a full list of valid realm names, however you can find the name of your realm through the WoW api.
 
-To find the api name of your realm go to:
+To find the api name of your realm, go to:
 
 ```
 [region].battle.net/api/wow/realm/status
@@ -64,17 +64,17 @@ To find the api name of your realm go to:
 
 Example:
 
-Say I want to find out the api name of Argent Dawn.
+Say I want to find out the api name of a european realm called: Argent Dawn.
 First I go to the following URL in my browser.
 ```
 eu.battle.net/api/wow/realm/status
 ```
-In the list I search for argent dawn and find this:
+In the list, I search for argent dawn and find this:
 
 ```
 ..."status":false,"name":"Argent Dawn","slug":"argent-dawn"...
 ```
-To make Colliage download data from Argent Dawn, I will have to insert "argent-dawn" into settings.yaml.
+To make Colliage download data from Argent Dawn, I will have to insert "argent-dawn" as realm and eu as region into settings.yaml.
 
 Run the main program “Colligate.rb”.
 
