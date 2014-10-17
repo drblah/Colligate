@@ -24,7 +24,7 @@ class DBmanager
 				puts dbPath
 				@db = SQLite3::Database.new dbPath
 
-				@db.execute("CREATE TABLE Alliance (
+				@db.execute("CREATE TABLE auctions (
 								 auctionNumber bigint NOT NULL,
 								 item int NULL,
 								 owner text NULL,
@@ -37,30 +37,17 @@ class DBmanager
 								 bidCount int DEFAULT 0,
 								 PRIMARY KEY (auctionNumber))")
 
-				@db.execute("CREATE TRIGGER AbidCounter
+				@db.execute("CREATE TRIGGER abidCounter
 									AFTER UPDATE
-									ON Alliance
+									ON auctions
 								BEGIN
-									UPDATE Alliance 
+									UPDATE auctions 
 									SET bidCount = bidCount + 1
 									WHERE bid > OLD.bid AND NEW.auctionNumber = auctionNumber;
 								END")
 
 
-				@db.execute("CREATE TABLE AllianceLog (
-								 auctionNumber bigint NOT NULL,
-								 item int NULL,
-								 owner text NULL,
-								 bid bigint NULL,
-								 buyout bigint NULL,
-								 quantity int NULL,
-								 timeleft Text NULL,
-								 createdDate bigint NULL,
-								 lastmodified bigint NULL, 
-								 bidCount int DEFAULT 0,
-								 PRIMARY KEY (auctionNumber))")
-				
-				@db.execute("CREATE TABLE Horde (
+				@db.execute("CREATE TABLE auctionsLog (
 								 auctionNumber bigint NOT NULL,
 								 item int NULL,
 								 owner text NULL,
@@ -73,74 +60,17 @@ class DBmanager
 								 bidCount int DEFAULT 0,
 								 PRIMARY KEY (auctionNumber))")
 
-				@db.execute("CREATE TRIGGER HbidCounter
-									AFTER UPDATE
-									ON Horde
-								BEGIN
-									UPDATE Horde 
-									SET bidCount = bidCount + 1
-									WHERE bid > OLD.bid AND NEW.auctionNumber = auctionNumber;
-								END")
 				
-				@db.execute("CREATE TABLE HordeLog (
-								 auctionNumber bigint NOT NULL,
-								 item int NULL,
-								 owner text NULL,
-								 bid bigint NULL,
-								 buyout bigint NULL,
-								 quantity int NULL,
-								 timeleft Text NULL,
-								 createdDate bigint NULL,
-								 lastmodified bigint NULL, 
-								 bidCount int DEFAULT 0,
-								 PRIMARY KEY (auctionNumber))")
-				
-				@db.execute("CREATE TABLE Neutral (
-								 auctionNumber bigint NOT NULL,
-								 item int NULL,
-								 owner text NULL,
-								 bid bigint NULL,
-								 buyout bigint NULL,
-								 quantity int NULL,
-								 timeleft Text NULL,
-								 createdDate bigint NULL,
-								 lastmodified bigint NULL, 
-								 bidCount int DEFAULT 0,
-								 PRIMARY KEY (auctionNumber))")
-
-				@db.execute("CREATE TRIGGER NbidCounter
-									AFTER UPDATE
-									ON Neutral
-								BEGIN
-									UPDATE Neutral 
-									SET bidCount = bidCount + 1
-									WHERE bid > OLD.bid AND NEW.auctionNumber = auctionNumber;
-								END")
-
-				
-				@db.execute("CREATE TABLE NeutralLog (
-								 auctionNumber bigint NOT NULL,
-								 item int NULL,
-								 owner text NULL,
-								 bid bigint NULL,
-								 buyout bigint NULL,
-								 quantity int NULL,
-								 timeleft Text NULL,
-								 createdDate bigint NULL,
-								 lastmodified bigint NULL, 
-								 bidCount int DEFAULT 0,
-								 PRIMARY KEY (auctionNumber))")
-				
-				@db.execute("CREATE TABLE Items (
+				@db.execute("CREATE TABLE items (
 								 ID int NOT NULL,
 								 Name text NULL, 
 								 JSON text NULL, 
 								 PRIMARY KEY (id))")
 
-
-				@db.execute("CREATE INDEX almod ON AllianceLog( lastmodified )")
-				@db.execute("CREATE INDEX hlmod ON HordeLog( lastmodified )")
-				@db.execute("CREATE INDEX nlmod ON NeutralLog ( lastmodified )")
+				@db.execute("CREATE INDEX lastmodIDX ON auctions( lastModified)")
+				@db.execute("CREATE INDEX itemIDX ON auctions( item )")
+				@db.execute("CREATE INDEX lastmodLogIDX ON auctionsLog( lastmodified )")
+				@db.execute("CREATE INDEX itemLogIDX ON auctionsLog( item )")
 				@db.execute("CREATE INDEX nameidx ON Items ( Name )")
 
 			end
@@ -187,13 +117,12 @@ class DBmanager
 
 		@db.transaction
 
-			puts "Loading new Alliance auctions into database."
-			@log.info "Loading new Alliance auctions into database."
+			puts "Loading new auctions into the database."
+			@log.info "Loading new auctions into the database."
 
-			auctions["alliance"]["auctions"].each do |auction|
-
+			auctions["auctions"]["auctions"].each do |auction|
 				
-				@db.execute("INSERT OR IGNORE INTO Alliance (
+				@db.execute("INSERT OR IGNORE INTO auctions (
 								auctionNumber, 
 								item, 
 								owner, 
@@ -224,122 +153,13 @@ class DBmanager
 
 			end
 
-			puts "Updating existing Alliance auctions."
-			@log.info "Updating existing Alliance auctions."
+			puts "Updating existing auctions."
+			@log.info "Updating existing auctions."
 
-			auctions["alliance"]["auctions"].each do |auction|
+			auctions["auctions"]["auctions"].each do |auction|
 
-				@db.execute("UPDATE Alliance 
+				@db.execute("UPDATE auctions 
 								SET bid = :bid, 
-								timeLeft = :timeLeft, 
-								lastmodified = :lastmodified 
-								WHERE auctionNumber = :auctionNumber", 
-								"bid" => auction["bid"], 
-								"timeLeft" => auction["timeLeft"], 
-								"lastmodified" => lastModified, 
-								"auctionNumber" => auction["auc"])	
-
-			end
-
-			puts "Loading new Horde auctions into database."
-			@log.info "Loading new Horde auctions into database."
-
-
-			auctions["horde"]["auctions"].each do |auction|
-
-				
-				@db.execute("INSERT OR IGNORE INTO Horde (
-								auctionNumber, 
-								item, 
-								owner, 
-								bid, 
-								buyout, 
-								quantity, 
-								timeleft, 
-								createdDate, 
-								lastmodified)
-								values ( 
-									:auctionNumber, 
-									:item, 
-									:owner, 
-									:bid, 
-									:buyout, 
-									:quantity, 
-									:timeLeft, 
-									:lastmodified , 
-									:lastmodified)", 
-									"auctionNumber" => auction["auc"], 
-									"item" => auction["item"], 
-									"owner" => auction["owner"], 
-									"bid" => auction["bid"], 
-									"buyout" => auction["buyout"], 
-									"quantity" => auction["quantity"], 
-									"timeLeft" => auction["timeLeft"], 
-									"lastmodified" => lastModified)
-
-			end
-
-			puts "Updating existing Horde auctions."
-			@log.info "Updating existing Horde auctions."
-
-			auctions["horde"]["auctions"].each do |auction|
-
-				@db.execute("UPDATE Horde SET 
-								bid = :bid, 
-								timeLeft = :timeLeft, 
-								lastmodified = :lastmodified 
-								WHERE auctionNumber = :auctionNumber", 
-								"bid" => auction["bid"], 
-								"timeLeft" => auction["timeLeft"], 
-								"lastmodified" => lastModified, 
-								"auctionNumber" => auction["auc"])	
-
-			end
-
-			puts "Loading new Neutral auctions into database."
-			@log.info "Loading new Neutral auctions into database."
-
-			auctions["neutral"]["auctions"].each do |auction|
-
-				
-				@db.execute("INSERT OR IGNORE INTO Neutral (
-								auctionNumber, 
-								item, 
-								owner, 
-								bid, 
-								buyout, 
-								quantity, 
-								timeleft, 
-								createdDate, 
-								lastmodified)
-								values ( 
-									:auctionNumber, 
-									:item, 
-									:owner, 
-									:bid, 
-									:buyout, 
-									:quantity, 
-									:timeLeft, 
-									:lastmodified , 
-									:lastmodified)", 
-									"auctionNumber" => auction["auc"], 
-									"item" => auction["item"], 
-									"owner" => auction["owner"], 
-									"bid" => auction["bid"], 
-									"buyout" => auction["buyout"], 
-									"quantity" => auction["quantity"], 
-									"timeLeft" => auction["timeLeft"], 
-									"lastmodified" => lastModified)
-
-			end
-
-			puts "Updating existing Neutral auctions."
-			@log.info "Updating existing Neutral auctions."
-
-			auctions["neutral"]["auctions"].each do |auction|
-
-				@db.execute("UPDATE Neutral SET 
-								bid = :bid,
 								timeLeft = :timeLeft, 
 								lastmodified = :lastmodified 
 								WHERE auctionNumber = :auctionNumber", 
@@ -379,29 +199,12 @@ class DBmanager
 
 			@db.transaction
 
-			@db.execute("delete FROM Alliance 
+			@db.execute("delete FROM auctions 
 						 WHERE lastmodified !=:lastmodified",
 						 "lastmodified" => lastModified)
 
-			@db.execute("delete FROM Horde 
-						 WHERE lastmodified !=:lastmodified", 
-						 "lastmodified" => lastModified)
-
-			@db.execute("delete FROM Neutral 
-						 WHERE lastmodified !=:lastmodified",
-						 "lastmodified" => lastModified)
-
-
 			@db.execute("DELETE
-						 FROM AllianceLog
-						 WHERE lastmodified < strftime('%s','now', '-2 months')")
-
-			@db.execute("DELETE
-						 FROM HordeLog
-						 WHERE lastmodified < strftime('%s','now', '-2 months')")
-
-			@db.execute("DELETE
-						 FROM NeutralLog
+						 FROM auctionsLog
 						 WHERE lastmodified < strftime('%s','now', '-2 months')")
 
 			@db.commit
@@ -432,18 +235,12 @@ class DBmanager
 			puts "Moving old auctions to log."
 			@log.info "Moving old auctions to log."
 			@db.transaction
-			@db.execute("INSERT OR IGNORE INTO AllianceLog 
-							 SELECT * FROM Alliance 
+
+			@db.execute("INSERT OR IGNORE INTO auctionsLog 
+							 SELECT * FROM auctions 
 							 WHERE lastmodified != 0 AND lastmodified < :lastModified", 
 							 "lastModified" => lastModified)
 
-			@db.execute("INSERT OR IGNORE INTO HordeLog 
-							 SELECT * FROM Horde WHERE lastmodified != 0 AND lastmodified < :lastModified",
-							 "lastModified" => lastModified)
-
-			@db.execute("INSERT OR IGNORE INTO NeutralLog 
-							 SELECT * FROM Neutral WHERE lastmodified != 0 AND lastmodified < :lastModified", 
-							 "lastModified" => lastModified)
 			@db.commit
 
 			puts "Successfully moved all old auctions to the log tables."
@@ -508,20 +305,7 @@ class DBmanager
 
 			missingItems = Array.new
 
-			@db.execute("SELECT item FROM AllianceLog EXCEPT SELECT ID FROM Items") do |item|
-
-				missingItems << item
-
-			end
-
-			@db.execute("SELECT item FROM HordeLog EXCEPT SELECT ID FROM Items") do |item|
-
-				missingItems << item
-
-			end
-
-
-			@db.execute("SELECT item FROM NeutralLog EXCEPT SELECT ID FROM Items") do |item|
+			@db.execute("SELECT item FROM auctionsLog EXCEPT SELECT ID FROM Items") do |item|
 
 				missingItems << item
 
