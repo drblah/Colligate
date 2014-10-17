@@ -20,16 +20,17 @@ rescue Exception => e
 end
 
 
+
 while true
 
 		while true
 		#downloader = Downloader.new("eu","argent-dawn")
 		#dbhandeler = DBmanager.new("eu", "argent-dawn")
-		workQueue = WorkQueue.new 4, nil
+		#workQueue = WorkQueue.new 4, nil
 
 			realms.each do |r|
 
-				workQueue.enqueue_b {
+				#workQueue.enqueue_b {
 
 				downloader = Downloader.new(r["region"], r["realm"])
 				dbhandeler = DBmanager.new(r["region"], r["realm"])
@@ -127,11 +128,11 @@ while true
 						log.info "Nothing new yet."
 
 					end
-				}		
+				#}		
 			end
 			puts "Waiting for threads to finish."
 			log.info "Waiting for threads to finish."
-			workQueue.join
+			#workQueue.join
 			GC.start
 			puts "Sleeping..."
 			log.info "Sleeping..."
