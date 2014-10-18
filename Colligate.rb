@@ -19,7 +19,18 @@ rescue Exception => e
 	exit
 end
 
+begin
+	
+	puts "Please enter your API key:"
+	@apikey = gets.chomp
 
+rescue Exception => e
+	
+	puts "#{e}"
+
+end
+
+puts @apikey
 
 while true
 
@@ -31,7 +42,7 @@ while true
 
 				workQueue.enqueue_b {
 
-				downloader = Downloader.new(r["region"], r["realm"])
+				downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
 				dbhandeler = DBmanager.new(r["region"], r["realm"])
 
 				lastModified = 0
@@ -88,6 +99,7 @@ while true
 
 							bnetdata = downloader.getItemJSON(item[0])
 
+							sleep 0.15 # Sleep a short while to make sure we do not exceed the limit of 10 requests per second.
 
 							if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
 							
@@ -103,6 +115,7 @@ while true
 									
 
 									itemJSON << bnetdata
+
 									false
 
 								end
