@@ -7,17 +7,19 @@ require "logger"
 # The Downloader class handels all HTTP requests required to download auctions
 class Downloader
 
-	def initialize(region, realm)
+	def initialize(region, realm, locale, apikey)
 		@log = Logger.new("log.log")
 		@region = region
-		@regionURL = "#{region}.battle.net" # Region can be eu.battle.net for europe ur us.battle.net for us.
+		@regionURL = "#{region}.api.battle.net" # Region can be eu.battle.net for europe ur us.battle.net for us.
 		@realm = realm # Server or realm. Note that spaces in the realm name is replaced by dash as in: "Argent dawn" becomes "argent-dawn".
+		@locale = locale
+		@apikey = apikey
 	end
 # Makes a request to the regional api for the URL to a specific server's auction database.
 	def getauctionURL
 		begin
-			uri = URI("http://" + @regionURL + "/api/wow/auction/data/" + @realm)
-
+			uri = URI("https://" + @regionURL + "/wow/auction/data/" + @realm + "?locale=#{@locale}" + "&apikey=#{@apikey}")
+			puts uri
 			jsontemp = Yajl::Parser.parse(Net::HTTP.get(uri)) # Parse JSON to ruby object.
 
 			dataURL = jsontemp["files"][0]["url"]
@@ -72,7 +74,7 @@ class Downloader
 	def getItemJSON(itemID) # Resolves an item's name from the battle.net api.
 
 		begin
-			uri = URI("http://" + @regionURL + "/api/wow/item/" + String(itemID))
+			uri = URI("https://" + @regionURL + "/wow/item/" + String(itemID) + "?locale=#{@locale}" + "&apikey=#{@apikey}")
 
 			itemJSON = Net::HTTP.get(uri)
 
