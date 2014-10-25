@@ -68,8 +68,8 @@ while true
 						success = downloader.downloadAuctionJSON(dataInfo[0])
 
 						if success
-						
-							success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSON,lastModified)
+							
+							success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile,lastModified)
 
 						end
 						
