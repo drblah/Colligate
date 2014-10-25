@@ -2,10 +2,11 @@
 require "yajl"
 require "logger"
 require "yaml"
-require "work_queue"
+
 
 require_relative "Downloader"
 require_relative "DBmanager"
+require_relative "Worker"
 
 log = Logger.new("log.log")
 
@@ -32,123 +33,138 @@ end
 
 puts @apikey
 
-while true
+worker = Worker.new
 
-		while true
+realms.each do |r|
 
-		workQueue = WorkQueue.new 4, nil
+	worker.addJob {
 
-			realms.each do |r|
+		downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
+		dbhandeler = DBmanager.new(r["region"], r["realm"])
 
-				workQueue.enqueue_b {
+		lastModified = 0
+		oldLastModified = 0
+		
+		while $status != "stop"
 
-				downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
-				dbhandeler = DBmanager.new(r["region"], r["realm"])
+			puts "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
+			log.info "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
 
-				lastModified = 0
-				oldLastModified = 0
+			dataInfo = downloader.getauctionURL
+
+			if dataInfo != nil
+				lastModified = dataInfo[1]	
+			end
+
+			if lastModified > oldLastModified
+
+				puts "New data is available. Beginning work..."
+				log.info "New data is available. Beginning work..."
+
+
+				oldLastModified = lastModified
 				
-					puts "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
-					log.info "Checking for new data. #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
+				success = downloader.downloadAuctionJSON(dataInfo[0])
 
-					dataInfo = downloader.getauctionURL
+				if success
+					
+					success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile,lastModified)
 
-					if dataInfo != nil
-						lastModified = dataInfo[1]	
-					end
+				end
+				
+				if success
+				
+					success = dbhandeler.moveoldtolog(lastModified)
 
-					if lastModified > oldLastModified
+				end
 
-						puts "New data is available. Beginning work..."
-						log.info "New data is available. Beginning work..."
+				if success
+					
+					dbhandeler.deleteold(lastModified)
 
+				end
 
-						oldLastModified = lastModified
-						
-						success = downloader.downloadAuctionJSON(dataInfo[0])
+				missingItems = dbhandeler.itemsNotInDB
 
-						if success
+				if missingItems != nil
+					
+
+					puts "Found #{missingItems.length} items not in item cache."
+					log.info "Found #{missingItems.length} items not in item cache."
+
+					itemJSON = Array.new
+
+					missingItems.delete_if do |item|
+
+					bnetdata = downloader.getItemJSON(item[0])
+
+					sleep 0.15 # Sleep a short while to make sure we do not exceed the limit of 10 requests per second.
+
+					if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
+					
+
+						if bnetdata[0] == nil
 							
-							success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile,lastModified)
+							true
 
-						end
-						
-						if success
-						
-							success = dbhandeler.moveoldtolog(lastModified)
-
-						end
-
-						if success
+						else
 							
-							dbhandeler.deleteold(lastModified)
-
-						end
-
-						missingItems = dbhandeler.itemsNotInDB
-
-						if missingItems != nil
-							
-
-							puts "Found #{missingItems.length} items not in item cache."
-							log.info "Found #{missingItems.length} items not in item cache."
-			
-							itemJSON = Array.new
-			
-							missingItems.delete_if do |item|
-
-							bnetdata = downloader.getItemJSON(item[0])
-
-							sleep 0.15 # Sleep a short while to make sure we do not exceed the limit of 10 requests per second.
-
-							if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
+							puts "Inserting #{item[0]}"
+							log.info "Inserting #{item[0]}"
 							
 
-								if bnetdata[0] == nil
-									
-									true
+							itemJSON << bnetdata
 
-								else
-									
-									puts "Inserting #{item[0]}"
-									log.info "Inserting #{item[0]}"
-									
-
-									itemJSON << bnetdata
-
-									false
-
-								end
-
-							else
-
-								true
-
-							end
-			
-								
-			
-							end
-			
-							dbhandeler.insertMissingItems(missingItems,itemJSON)
+							false
 
 						end
 
 					else
 
-						puts "Nothing new yet."
-						log.info "Nothing new yet."
+						true
 
 					end
-				}		
-			end
-			puts "Waiting for threads to finish."
-			log.info "Waiting for threads to finish."
-			workQueue.join
-			GC.start
-			puts "Sleeping..."
-			log.info "Sleeping..."
-			sleep(300)
-		end
 
+						
+
+					end
+
+					dbhandeler.insertMissingItems(missingItems,itemJSON)
+
+				end
+
+			else
+
+				puts "Nothing new yet."
+				log.info "Nothing new yet."
+
+			end
+
+			puts "Sleeping..."
+
+			(0..99).each do
+
+				sleep(3)
+
+				Thread.exit if $status == "stop"
+
+			end
+
+			
+
+		end
+	}		
+end
+	
+while true
+
+	option = gets.chomp
+
+	if option == "stop"
+		
+		worker.stopJobs
+
+		exit
+	end
+	
 end
