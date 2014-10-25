@@ -104,6 +104,31 @@ class DBmanager
 		
 
 	end
+
+	def readAuctionJSONFile
+
+		begin
+			
+			f = File.read("eu.argent-dawn.json", :mode => 'r:utf-8') # Open file as UTF-8
+
+			f = f.lines.to_a[3..-1].join # Remove 3 first lines
+			f = f.gsub!( /\r\n?/, "\n" ) # Replace windows line endings with unix ( CRFL to FL )
+			f = f.chomp("]}\n}").gsub!(",\n", "\n") # Remove ending of file and remove trailing ',' on each line
+
+			puts "Auction JSONfile successfully read."
+			@log.info "Auction JSONfile successfully read."
+
+			return f
+
+		rescue Exception => e
+			
+			puts "Failed to read auction JSON file\n #{e}"
+			@log.error "Failed to read auction JSON file\n #{e}"
+
+		end
+		
+	end
+
 	# Writes the loaded aucitons into the SQLite3 database
 	def writeAuctionsToDB(auctions, lastModified)
 
@@ -117,11 +142,13 @@ class DBmanager
 
 		@db.transaction
 
-			puts "Loading new auctions into the database."
-			@log.info "Loading new auctions into the database."
+			puts "Loading new auctions into the database and updating old."
+			@log.info "Loading new auctions into the database and updating old."
 
-			auctions["auctions"]["auctions"].each do |auction|
+			auctions.lines.each do |line|
 				
+				auction = Yajl::Parser.parse(line)
+
 				@db.execute("INSERT OR IGNORE INTO auctions (
 								auctionNumber, 
 								item, 
@@ -150,13 +177,6 @@ class DBmanager
 									"quantity" => auction["quantity"], 
 									"timeLeft" => auction["timeLeft"], 
 									"lastmodified" => lastModified)
-
-			end
-
-			puts "Updating existing auctions."
-			@log.info "Updating existing auctions."
-
-			auctions["auctions"]["auctions"].each do |auction|
 
 				@db.execute("UPDATE auctions 
 								SET bid = :bid, 

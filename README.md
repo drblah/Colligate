@@ -41,8 +41,10 @@ The following is an example of a working configration.
 ---
 - realm: argent-dawn
   region: eu
+  locale: en_GB
 - realm: alakir
   region: eu
+  locale: en_GB
 ```
 Valid WoW api regions are:
 
@@ -51,6 +53,26 @@ us : US
 eu : Europe
 kr : Korea : untested, but should work
 tw : Taiwan : untested, but should work
+```
+
+Locales and regions:
+
+```
+Region		Host							Available Locales
+
+US			https://us.api.battle.net/		en_US
+es_MX
+pt_BR
+Europe		https://eu.api.battle.net/		en_GB
+es_ES
+fr_FR
+ru_RU
+de_DE
+pt_PT
+it_IT
+Korea		https://kr.api.battle.net/		ko_KR
+Taiwan		https://tw.api.battle.net/		zh_TW
+China		https://www.battlenet.com.cn/	zh_CN
 ```
 
 Realm names need to be spelled a bit different than usual. An example of that is argent-dawn, which is normally spelled Argent Dawn. I cannot provide a full list of valid realm names, however you can find the name of your realm through the WoW api.
