@@ -1,4 +1,7 @@
 ---
+- realm: aerie-peak
+  region: eu
+  locale: en_GB
 - realm: argent-dawn
   region: eu
   locale: en_GB
