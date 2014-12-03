@@ -2,7 +2,7 @@
 require "yajl"
 require "logger"
 require "yaml"
-
+require "thread"
 
 require_relative "Downloader"
 require_relative "DBmanager"
@@ -28,6 +28,14 @@ begin
 rescue Exception => e
 	
 	puts "#{e}"
+
+end
+
+@tokens = Queue.new
+
+(1..2).each do
+
+	@tokens << 1
 
 end
 
@@ -57,7 +65,7 @@ realms.each do |r|
 			end
 
 			if lastModified > oldLastModified
-
+				@tokens.pop
 				puts "New data is available. Beginning work..."
 				log.info "New data is available. Beginning work..."
 
@@ -132,7 +140,7 @@ realms.each do |r|
 					dbhandeler.insertMissingItems(missingItems,itemJSON)
 
 				end
-
+				@tokens << 1
 			else
 
 				puts "Nothing new yet."

@@ -1,3 +1,5 @@
+require 'thread'
+
 class Worker
 
 	def initialize
