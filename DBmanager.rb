@@ -1,8 +1,8 @@
 # encoding: utf-8
-require "sqlite3"
 require "yajl"
 require "fileutils"
 require "logger"
+require "sequel"
 
 # This class will handle all calls to the database.
 class DBmanager
@@ -16,62 +16,24 @@ class DBmanager
 			dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
 			# Open database if it exists.
-			@db = SQLite3::Database.open dbPath if File.exist?(dbPath)
+			@DB = Sequel.connect("postgres://cg:colligate@localhost:5432/colligate")
 			
 			# Create database and the tables if the database does not exist
-			if(not File.exist?(dbPath))
-				FileUtils::mkdir_p "databases/#{region}/#{realm}"
-				puts dbPath
-				@db = SQLite3::Database.new dbPath
 
-				@db.execute("CREATE TABLE auctions (
-								 auctionNumber bigint NOT NULL,
-								 item int NULL,
-								 owner text NULL,
-								 bid bigint NULL,
-								 buyout bigint NULL,
-								 quantity int NULL,
-								 timeleft Text NULL,
-								 createdDate bigint NULL,
-								 lastmodified bigint NULL, 
-								 bidCount int DEFAULT 0,
-								 PRIMARY KEY (auctionNumber))")
-
-				@db.execute("CREATE TRIGGER abidCounter
-									AFTER UPDATE
-									ON auctions
-								BEGIN
-									UPDATE auctions 
-									SET bidCount = bidCount + 1
-									WHERE bid > OLD.bid AND NEW.auctionNumber = auctionNumber;
-								END")
-
-
-				@db.execute("CREATE TABLE auctionsLog (
-								 auctionNumber bigint NOT NULL,
-								 item int NULL,
-								 owner text NULL,
-								 bid bigint NULL,
-								 buyout bigint NULL,
-								 quantity int NULL,
-								 timeleft Text NULL,
-								 createdDate bigint NULL,
-								 lastmodified bigint NULL, 
-								 bidCount int DEFAULT 0,
-								 PRIMARY KEY (auctionNumber))")
-
+			if not DB.table_exists?(:auctions)
 				
-				@db.execute("CREATE TABLE items (
-								 ID int NOT NULL,
-								 Name text NULL, 
-								 JSON text NULL, 
-								 PRIMARY KEY (id))")
-
-				@db.execute("CREATE INDEX lastmodIDX ON auctions( lastModified)")
-				@db.execute("CREATE INDEX itemIDX ON auctions( item )")
-				@db.execute("CREATE INDEX lastmodLogIDX ON auctionsLog( lastmodified )")
-				@db.execute("CREATE INDEX itemLogIDX ON auctionsLog( item )")
-				@db.execute("CREATE INDEX nameidx ON Items ( Name )")
+				DB.create_table(:auctions) do
+					Bignum		:auctionNumber, :primary_key => true
+					Integer		:item, :index => true
+					String		:owner, :text => true
+					Bignum		:bid
+					Bignum		:buyout
+					Integer		:quantity
+					String		:timeLeft, :text => true
+					DateTime	:createdDate
+					DateTime	:lastModified, :index => true
+					Integer		:bidCount
+				end
 
 			end
 
