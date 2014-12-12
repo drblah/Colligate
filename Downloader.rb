@@ -23,14 +23,14 @@ class Downloader
 			jsontemp = Yajl::Parser.parse(Net::HTTP.get(uri)) # Parse JSON to ruby object.
 
 			dataURL = jsontemp["files"][0]["url"]
-			lastModified = jsontemp["files"][0]["lastModified"]/1000
+			lastModified = Time.at(jsontemp["files"][0]["lastModified"]/1000).to_datetime
 
-			puts "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{Time.at(lastModified).to_datetime}"
-			@log.info "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{Time.at(lastModified).to_datetime}"
+			puts "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{lastModified}"
+			@log.info "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{lastModified}"
 
 			return URI(dataURL),lastModified
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to get the Auction data URL."
 			@log.error "Failed to get the Auction data URL."
@@ -60,7 +60,7 @@ class Downloader
 
 			return true
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to download the Auction JSON data.\n #{e}"
 			@log.error "Failed to download the Auction JSON data.\n #{e}"
@@ -107,7 +107,7 @@ class Downloader
 
 			
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to connect to battle.net\n #{e}"
 			@log.error "Failed to connect to battle.net\n #{e}"

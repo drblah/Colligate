@@ -14,7 +14,7 @@ begin
 
 	realms = YAML.load_file("settings.yaml")
 	
-rescue Exception => e
+rescue => e
 	
 	puts "Failed to read settings.yaml. I cannot download data without knowing where to download it from.\n #{e}"
 	exit
@@ -25,7 +25,7 @@ begin
 	puts "Please enter your API key:"
 	@apikey = gets.chomp
 
-rescue Exception => e
+rescue => e
 	
 	puts "#{e}"
 
@@ -69,7 +69,6 @@ realms.each do |r|
 				puts "New data is available. Beginning work..."
 				log.info "New data is available. Beginning work..."
 
-
 				oldLastModified = lastModified
 				
 				success = downloader.downloadAuctionJSON(dataInfo[0])
@@ -92,54 +91,55 @@ realms.each do |r|
 
 				end
 
-				missingItems = dbhandeler.itemsNotInDB
+#				missingItems = dbhandeler.itemsNotInDB
+#
+#				if missingItems != nil
+#					
+#
+#					puts "Found #{missingItems.length} items not in item cache."
+#					log.info "Found #{missingItems.length} items not in item cache."
+#
+#					itemJSON = Array.new
+#
+#					missingItems.delete_if do |item|
+#
+#					bnetdata = downloader.getItemJSON(item[0])
+#
+#					sleep 0.15 # Sleep a short while to make sure we do not exceed the limit of 10 requests per second.
+#
+#					if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
+#					
+#
+#						if bnetdata[0] == nil
+#							
+#							true
+#
+#						else
+#							
+#							puts "Inserting #{item[0]}"
+#							log.info "Inserting #{item[0]}"
+#							
+#
+#							itemJSON << bnetdata
+#
+#							false
+#
+#						end
+#
+#					else
+#
+#						true
+#
+#					end
+#
+#						
+#
+#					end
+#
+#					dbhandeler.insertMissingItems(missingItems,itemJSON)
+#
+#				end
 
-				if missingItems != nil
-					
-
-					puts "Found #{missingItems.length} items not in item cache."
-					log.info "Found #{missingItems.length} items not in item cache."
-
-					itemJSON = Array.new
-
-					missingItems.delete_if do |item|
-
-					bnetdata = downloader.getItemJSON(item[0])
-
-					sleep 0.15 # Sleep a short while to make sure we do not exceed the limit of 10 requests per second.
-
-					if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
-					
-
-						if bnetdata[0] == nil
-							
-							true
-
-						else
-							
-							puts "Inserting #{item[0]}"
-							log.info "Inserting #{item[0]}"
-							
-
-							itemJSON << bnetdata
-
-							false
-
-						end
-
-					else
-
-						true
-
-					end
-
-						
-
-					end
-
-					dbhandeler.insertMissingItems(missingItems,itemJSON)
-
-				end
 				@tokens << 1
 			else
 
