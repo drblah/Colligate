@@ -12,17 +12,22 @@ class DBmanager
 			@region = region
 			@realm = realm
 
+			@auctionsTable = "#{region}_#{realm}_auctions"
+			@logTable = "#{region}_#{realm}_auctionsLog"
+
 			@log = Logger.new("log.log")
 			dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
 			# Open database if it exists.
 			@DB = Sequel.connect("postgres://cg:colligate@localhost:5432/colligate")
+
+			#@DB.loggers << Logger.new(STDOUT)
 			
 			# Create database and the tables if the database does not exist
 
-			if not @DB.table_exists?(:auctions)
+			if not @DB.table_exists?(@auctionsTable)
 				
-				@DB.create_table(:auctions) do
+				@DB.create_table(@auctionsTable) do
 					Bignum		:auctionNumber, :primary_key => true
 					Integer		:item, :index => true
 					String		:owner, :text => true
@@ -37,9 +42,9 @@ class DBmanager
 
 			end
 
-			if not @DB.table_exists?(:auctionsLog)
+			if not @DB.table_exists?(@logTable)
 				
-				@DB.create_table(:auctionsLog) do
+				@DB.create_table(@logTable) do
 					Bignum		:auctionNumber, :primary_key => true
 					Integer		:item, :index => true
 					String		:owner, :text => true
@@ -133,7 +138,7 @@ class DBmanager
 			@log.info "Loading new auctions into the database and updating old."
 
 			
-			auctionsTBL = @DB.from(:auctions)
+			auctionsTBL = @DB.from(@auctionsTable)
 
 
 			@DB.transaction do
@@ -189,7 +194,9 @@ class DBmanager
 			puts "Deleting expired auctions."
 			@log.info "Deleting expired auctions."
 
-			@DB[:auctions].exclude(:lastModified => lastModified).delete
+			auctionDataset = @DB.from(@auctionsTable)
+
+			auctionDataset.exclude(:lastModified => lastModified).delete
 
 			puts "Old auctions has been deleted from the database."
 			@log.info "Old auctions has been deleted from the database."
@@ -216,8 +223,12 @@ class DBmanager
 			puts "Moving old auctions to log."
 			@log.info "Moving old auctions to log."
 
+			logDataset = @DB.from(@logTable)
+			auctionDataset = @DB.from(@auctionsTable)
 
-			@DB[:auctionsLog].insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], @DB[:auctions].left_outer_join(:auctionsLog, :auctionNumber => :auctionNumber).where('"auctionsLog"."auctionNumber" IS NULL').qualify )
+			whereClause = '"' + @logTable + '"."auctionNumber" IS NULL'
+
+			logDataset.insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], auctionDataset.left_outer_join(@logTable, :auctionNumber => :auctionNumber).where(whereClause).qualify )
 
 			puts "Successfully moved all old auctions to the log tables."
 			@log.info "Successfully moved all old auctions to the log tables."
@@ -280,7 +291,9 @@ class DBmanager
 
 			missingItems = []
 
-			@DB[:auctionsLog].distinct(:item).exclude(:item => @DB[:items].select(:id)).limit(20).each do |item|
+			logDataset = @DB.from(@logTable)
+
+			logDataset.distinct(:item).exclude(:item => @DB[:items].select(:id)).limit(20).each do |item|
 
 				missingItems << item[:item]
 

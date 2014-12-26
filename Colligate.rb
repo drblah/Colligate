@@ -33,7 +33,7 @@ end
 
 @tokens = Queue.new
 
-(1..2).each do
+(1..4).each do
 
 	@tokens << 1
 
@@ -42,6 +42,45 @@ end
 puts @apikey
 
 worker = Worker.new
+
+# Worker for item name resolve
+
+worker.addJob {
+
+	while $status != "stop"
+
+		realms.each do |r|
+
+			downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
+			dbhandeler = DBmanager.new(r["region"], r["realm"])
+
+			missingItems = dbhandeler.itemsNotInDB
+
+			missingItems.each do |item|
+
+				iJSON = downloader.getItemJSON(item)
+
+				dbhandeler.insertItem(item, iJSON[0], iJSON[1])
+
+			end
+
+		end
+
+		puts "Sleeping item resolver..."
+
+		(0..99).each do
+
+			sleep(3)
+
+			Thread.exit if $status == "stop"
+
+		end
+
+
+	end
+}
+
+
 
 realms.each do |r|
 
@@ -91,15 +130,7 @@ realms.each do |r|
 
 				end
 
-				puts missingItems = dbhandeler.itemsNotInDB
-
-				missingItems.each do |item|
-
-					iJSON = downloader.getItemJSON(item)
-
-					dbhandeler.insertItem(item, iJSON[0], iJSON[1])
-
-				end
+				
 
 				@tokens << 1
 			else

@@ -98,8 +98,8 @@ class Downloader
 
 			else
 
-				puts "Successfully retrived item JSON."
-				@log.info "Successfully retrived item JSON."
+				puts "Successfully retrived JSON for #{itemID}."
+				@log.info "Successfully retrived JSON for #{itemID}."
 
 				return Yajl::Parser.parse(itemJSON)["name"], itemJSON
 
