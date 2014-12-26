@@ -91,54 +91,15 @@ realms.each do |r|
 
 				end
 
-#				missingItems = dbhandeler.itemsNotInDB
-#
-#				if missingItems != nil
-#					
-#
-#					puts "Found #{missingItems.length} items not in item cache."
-#					log.info "Found #{missingItems.length} items not in item cache."
-#
-#					itemJSON = Array.new
-#
-#					missingItems.delete_if do |item|
-#
-#					bnetdata = downloader.getItemJSON(item[0])
-#
-#					sleep 0.15 # Sleep a short while to make sure we do not exceed the limit of 10 requests per second.
-#
-#					if (defined? bnetdata) #Check if we got any data from downloader class. If not, skip the item untill next update.
-#					
-#
-#						if bnetdata[0] == nil
-#							
-#							true
-#
-#						else
-#							
-#							puts "Inserting #{item[0]}"
-#							log.info "Inserting #{item[0]}"
-#							
-#
-#							itemJSON << bnetdata
-#
-#							false
-#
-#						end
-#
-#					else
-#
-#						true
-#
-#					end
-#
-#						
-#
-#					end
-#
-#					dbhandeler.insertMissingItems(missingItems,itemJSON)
-#
-#				end
+				puts missingItems = dbhandeler.itemsNotInDB
+
+				missingItems.each do |item|
+
+					iJSON = downloader.getItemJSON(item)
+
+					dbhandeler.insertItem(item, iJSON[0], iJSON[1])
+
+				end
 
 				@tokens << 1
 			else
