@@ -54,6 +54,16 @@ class DBmanager
 
 			end
 
+			if not @DB.table_exists?(:items)
+				
+				@DB.create_table(:items) do
+					Integer		:id, :primary_key => true
+					String		:name, :text => true, :index => true
+					String		:JSON, :text => true
+				end
+
+			end
+
 			
 	end
 
@@ -252,7 +262,7 @@ class DBmanager
 
 		begin
 			
-			@db.execute("INSERT OR IGNORE INTO items VALUES (:ID, :Name, :JSON)", "ID" => itemID, "Name" => itemName, "JSON" => itemJSON)
+			@DB[:items].insert(:id => itemID, :name => itemName, :JSON => itemJSON)
 
 		rescue => e
 			
@@ -268,15 +278,15 @@ class DBmanager
 
 		begin
 
-			missingItems = Array.new
+			missingItems = []
 
-			@db.execute("SELECT item FROM auctionsLog EXCEPT SELECT ID FROM Items") do |item|
+			@DB[:auctionsLog].distinct(:item).exclude(:item => @DB[:items].select(:id)).limit(20).each do |item|
 
-				missingItems << item
+				missingItems << item[:item]
 
 			end
 
-			return missingItems.uniq[0..19]
+			return missingItems
 
 		rescue => e
 			
@@ -292,15 +302,11 @@ class DBmanager
 
 	def insertMissingItems(missingItems,itemJSON)
 
-		@db.transaction
+			missingItems.each_with_index do |item,i|
 
-		missingItems.each_with_index do |item,i|
+				self.insertItem(item[0], itemJSON[i][0], itemJSON[i][1])
 
-			self.insertItem(item[0], itemJSON[i][0], itemJSON[i][1])
-
-		end
-
-		@db.commit
+			end
 		
 	end
 
