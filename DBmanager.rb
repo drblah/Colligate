@@ -206,7 +206,8 @@ class DBmanager
 			puts "Moving old auctions to log."
 			@log.info "Moving old auctions to log."
 
-			@DB[:auctionsLog].insert([ :auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], @DB[:auctions])
+
+			@DB[:auctionsLog].insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], @DB[:auctions].left_outer_join(:auctionsLog, :auctionNumber => :auctionNumber).where('"auctionsLog"."auctionNumber" IS NULL').qualify )
 
 			puts "Successfully moved all old auctions to the log tables."
 			@log.info "Successfully moved all old auctions to the log tables."
@@ -217,7 +218,6 @@ class DBmanager
 			
 			puts "Failed to move old auctions to log table\ #{e}"
 			@log.error "Failed to move old auctions to log table\ #{e}"
-			@db.rollback if @db.transaction_active?
 			return false
 
 		end
