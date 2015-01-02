@@ -85,16 +85,16 @@ class Downloader
 
 				return nil, nil
 
-			elsif itemJSON.include? "unable to get item information."
-				
-				puts "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
-				@log.info "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
-
-				html = Net::HTTP.get(URI("http://www.wowhead.com/item=#{itemID}"))
-
-				name = html.scan(/<title>([^<>]*)<\/title>/)[0][0].split(' - Item - World of Warcraft').first
-
-				return name,nil
+#			elsif itemJSON.include? "unable to get item information."
+#				
+#				puts "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
+#				@log.info "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
+#
+#				html = Net::HTTP.get(URI("http://www.wowhead.com/item=#{itemID}"))
+#
+#				name = html.scan(/<title>([^<>]*)<\/title>/)[0][0].split(' - Item - World of Warcraft').first
+#
+#				return name,nil
 
 			else
 

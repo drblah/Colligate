@@ -323,6 +323,12 @@ class DBmanager
 		
 	end
 
+	def close
+
+		@DB.disconnect
+		
+	end
+
 
 	def test
 
