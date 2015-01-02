@@ -99,12 +99,13 @@ class DBmanager
 
 	end
 
-	def readAuctionJSONFile
+	def readAuctionJSONFile(json)
 
 		begin
 			
-			f = File.read("#{@region}.#{@realm}.json", :mode => 'r:utf-8') # Open file as UTF-8
+			#f = File.read("#{@region}.#{@realm}.json", :mode => 'r:utf-8') # Open file as UTF-8
 
+			f = json
 			f = f.lines.to_a[3..-1].join # Remove 3 first lines
 			f = f.gsub!( /\r\n?/, "\n" ) # Replace windows line endings with unix ( CRFL to FL )
 			f = f.chomp("]}\n}").gsub!(",\n", "\n") # Remove ending of file and remove trailing ',' on each line
