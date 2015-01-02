@@ -131,7 +131,7 @@ while true
 
 				if json != false
 					
-					success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile,lastModified)
+					success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile(json),lastModified)
 
 				end
 				
