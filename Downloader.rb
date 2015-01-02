@@ -40,7 +40,7 @@ class Downloader
 			puts e
 			@log.error e
 
-			return nil
+			return false
 
 		end
 		
