@@ -100,62 +100,63 @@ while true
 		# Get url to the auction data. Also returns the time/date of when the data was last updated.
 		dataInfo = downloader.getauctionURL
 
-		if dataInfo != nil
+		if dataInfo != false
 			lastModified = dataInfo[1]
+		
+			# Find the last modified time for the realm we are looking at now.
+			oldLastModified = timeTable.find {|t| t[:realm] == r["realm"]}[:lastModified]
+
+			if lastModified > oldLastModified
+
+				dbhandeler = DBmanager.new(r["region"], r["realm"])
+
+				# Find index at which the time is stored for this realm in the timeTable
+				index = timeTable.find_index(timeTable.find {|t| t[:realm] == r["realm"]})
+
+				# Update lastmodified
+				timeTable[index][:lastModified] = lastModified
+
+				worker.addJob {
+
+					@tokens.pop
+
+					puts "New data is available. Beginning work..."
+					log.info "New data is available. Beginning work..."
+					
+					json = downloader.downloadAuctionJSON(dataInfo[0])
+
+					success = false
+
+					if json != false
+						
+						success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile(json),lastModified)
+
+					end
+					
+					if success
+					
+						success = dbhandeler.moveoldtolog(lastModified)
+
+					end
+
+					if success
+						
+						dbhandeler.deleteold(lastModified)
+
+					end
+
+					dbhandeler.close
+
+					@tokens << 1
+
+				}
+
+				
+			end
+
 		end
 
-		# Find the last modified time for the realm we are looking at now.
-		oldLastModified = timeTable.find {|t| t[:realm] == r["realm"]}[:lastModified]
 
-
-		if lastModified > oldLastModified
-
-			dbhandeler = DBmanager.new(r["region"], r["realm"])
-
-			# Find index at which the time is stored for this realm in the timeTable
-			index = timeTable.find_index(timeTable.find {|t| t[:realm] == r["realm"]})
-
-			# Update lastmodified
-			timeTable[index][:lastModified] = lastModified
-
-			worker.addJob {
-
-				@tokens.pop
-
-				puts "New data is available. Beginning work..."
-				log.info "New data is available. Beginning work..."
-				
-				json = downloader.downloadAuctionJSON(dataInfo[0])
-
-				success = false
-
-				if json != false
-					
-					success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile(json),lastModified)
-
-				end
-				
-				if success
-				
-					success = dbhandeler.moveoldtolog(lastModified)
-
-				end
-
-				if success
-					
-					dbhandeler.deleteold(lastModified)
-
-				end
-
-				dbhandeler.close
-
-				@tokens << 1
-
-
-			}
-
-			
-		end
 
 	end
 
