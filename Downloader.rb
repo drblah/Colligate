@@ -99,7 +99,7 @@ class Downloader
 				puts "Failed to retrieve item JSON.\n Error message from the server: #{itemJSON}"
 				@log.error "Failed to retrieve item JSON.\n Error message from the server: #{itemJSON}"
 
-				return nil, nil
+				return false
 
 #			elsif itemJSON.include? "unable to get item information."
 #				
@@ -127,6 +127,8 @@ class Downloader
 			
 			puts "Failed to connect to battle.net\n #{e}"
 			@log.error "Failed to connect to battle.net\n #{e}"
+
+			return false
 
 		end
 	end
