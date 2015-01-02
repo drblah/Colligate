@@ -13,6 +13,16 @@ class Worker
 		
 	end
 
+	def join
+		
+		@jobList.each do |job|
+
+			job.join
+
+		end
+
+	end
+
 	def stopJobs
 
 		$status = "stop"
