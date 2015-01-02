@@ -1,6 +1,7 @@
 # encoding: utf-8
 require "yajl"
 require "net/http"
+require "open-uri"
 require "date"
 require "logger"
 
@@ -18,9 +19,9 @@ class Downloader
 # Makes a request to the regional api for the URL to a specific server's auction database.
 	def getauctionURL
 		begin
-			uri = URI("https://" + @regionURL + "/wow/auction/data/" + @realm + "?locale=#{@locale}" + "&apikey=#{@apikey}")
+			uri = "https://" + @regionURL + "/wow/auction/data/" + @realm + "?locale=#{@locale}" + "&apikey=#{@apikey}"
 			puts uri
-			jsontemp = Yajl::Parser.parse(Net::HTTP.get(uri)) # Parse JSON to ruby object.
+			jsontemp = Yajl::Parser.parse(open(uri)) # Parse JSON to ruby object.
 
 			dataURL = jsontemp["files"][0]["url"]
 			lastModified = Time.at(jsontemp["files"][0]["lastModified"]/1000).to_datetime
@@ -50,15 +51,30 @@ class Downloader
 
 		begin
 
-			auctionJSONfile = File.new("#{@region}.#{@realm}.json", "w+") # Due to the size of the database it is stored as a file on disk.
+			#auctionJSONfile = File.new("#{@region}.#{@realm}.json", "w+") # Due to the size of the database it is stored as a file on disk.
 
-			auctionJSONfile.write(Net::HTTP.get(uri))
-			auctionJSONfile.close()
+			json = Net::HTTP.get(uri)
 
-			puts "Successfully downloaded auction data."
-			@log.info "Successfully downloaded auction data."
+			#auctionJSONfile.write(json)
+			#auctionJSONfile.close()
 
-			return true
+
+			
+			if json[0..400].include? "<title>404 Not Found</title>"
+				
+				puts "Failed to download the Auction JSON data.\n #{json}"
+				@log.error "Failed to download the Auction JSON data.\n #{json}"
+
+				return false
+
+			else
+			
+				puts "Successfully downloaded auction data."
+				@log.info "Successfully downloaded auction data."
+
+				return json
+
+			end
 
 		rescue => e
 			
@@ -74,9 +90,9 @@ class Downloader
 	def getItemJSON(itemID) # Resolves an item's name from the battle.net api.
 
 		begin
-			uri = URI("https://" + @regionURL + "/wow/item/" + String(itemID) + "?locale=#{@locale}" + "&apikey=#{@apikey}")
-
-			itemJSON = Net::HTTP.get(uri)
+			uri = "https://" + @regionURL + "/wow/item/" + String(itemID) + "?locale=#{@locale}" + "&apikey=#{@apikey}"
+			puts "Item request #{uri}"
+			itemJSON = open(uri).string
 
 			if itemJSON.include? "Internal server error."
 			
