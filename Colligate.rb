@@ -125,9 +125,11 @@ while true
 				puts "New data is available. Beginning work..."
 				log.info "New data is available. Beginning work..."
 				
-				success = downloader.downloadAuctionJSON(dataInfo[0])
+				json = downloader.downloadAuctionJSON(dataInfo[0])
 
-				if success
+				success = false
+
+				if json != false
 					
 					success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile,lastModified)
 
@@ -155,12 +157,35 @@ while true
 			
 		end
 
-
 	end
 
 	worker.join
 
-	puts "Jobs finished at #{Time.now}"
+	puts "Update jobs finished at #{Time.now}"
+
+	worker.addJob {
+
+		realms.each do |r|
+
+			downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
+			dbhandeler = DBmanager.new(r["region"], r["realm"])
+
+			missingItems = dbhandeler.itemsNotInDB
+
+			missingItems.each do |item|
+
+				iJSON = downloader.getItemJSON(item)
+
+				dbhandeler.insertItem(item, iJSON[0], iJSON[1])
+
+			end
+
+			dbhandeler.close
+
+		end
+		puts "Item name lookup finished for this run."
+	}
+
 
 	needUpdate = false
 
