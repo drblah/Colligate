@@ -176,7 +176,7 @@ while true
 
 				iJSON = downloader.getItemJSON(item)
 
-				dbhandeler.insertItem(item, iJSON[0], iJSON[1])
+				dbhandeler.insertItem(item, iJSON[0], iJSON[1]) if iJSON != false
 
 			end
 
