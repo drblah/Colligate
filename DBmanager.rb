@@ -19,7 +19,7 @@ class DBmanager
 			dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
 			# Open database if it exists.
-			@DB = Sequel.connect("postgres://cg:colligate@localhost:5432/colligate")
+			@DB = Sequel.connect("mysql2://cg:colligate@localhost/colligate")
 
 			#@DB.loggers << Logger.new(STDOUT)
 			
@@ -141,6 +141,7 @@ class DBmanager
 			
 			auctionsTBL = @DB.from(@auctionsTable)
 
+			start = Time.now
 
 			@DB.transaction do
 
@@ -173,7 +174,7 @@ class DBmanager
 
 			puts "Auction import complete."
 			@log.info "Auction import complete."
-
+			puts "Done in #{Time.now - start}"
 			return true
 
 		rescue => e
@@ -227,9 +228,11 @@ class DBmanager
 			logDataset = @DB.from(@logTable)
 			auctionDataset = @DB.from(@auctionsTable)
 
-			whereClause = '"' + @logTable + '"."auctionNumber" IS NULL'
+			#whereClause = '"' + @logTable + '"."auctionNumber" IS NULL'
 
-			logDataset.insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], auctionDataset.left_outer_join(@logTable, :auctionNumber => :auctionNumber).where(whereClause).qualify )
+			#logDataset.insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], auctionDataset.left_outer_join(@logTable, :auctionNumber => :auctionNumber).where(whereClause).qualify )
+
+			logDataset.insert_ignore.insert(auctionDataset.where('lastModified < ?', lastModified))
 
 			puts "Successfully moved all old auctions to the log tables."
 			@log.info "Successfully moved all old auctions to the log tables."
@@ -238,8 +241,8 @@ class DBmanager
 
 		rescue => e
 			
-			puts "Failed to move old auctions to log table\ #{e}"
-			@log.error "Failed to move old auctions to log table\ #{e}"
+			puts "Failed to move old auctions to log table\n #{e}"
+			@log.error "Failed to move old auctions to log table\n #{e}"
 			return false
 
 		end
