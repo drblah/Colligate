@@ -1,8 +1,8 @@
 # encoding: utf-8
-require "sqlite3"
 require "yajl"
 require "fileutils"
 require "logger"
+require "sequel"
 
 # This class will handle all calls to the database.
 class DBmanager
@@ -12,66 +12,60 @@ class DBmanager
 			@region = region
 			@realm = realm
 
+			@auctionsTable = "#{region}_#{realm}_auctions"
+			@logTable = "#{region}_#{realm}_auctionsLog"
+
 			@log = Logger.new("log.log")
 			dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
 			# Open database if it exists.
-			@db = SQLite3::Database.open dbPath if File.exist?(dbPath)
+			@DB = Sequel.connect("mysql2://cg:colligate@localhost/colligate")
+
+			#@DB.loggers << Logger.new(STDOUT)
 			
 			# Create database and the tables if the database does not exist
-			if(not File.exist?(dbPath))
-				FileUtils::mkdir_p "databases/#{region}/#{realm}"
-				puts dbPath
-				@db = SQLite3::Database.new dbPath
 
-				@db.execute("CREATE TABLE auctions (
-								 auctionNumber bigint NOT NULL,
-								 item int NULL,
-								 owner text NULL,
-								 bid bigint NULL,
-								 buyout bigint NULL,
-								 quantity int NULL,
-								 timeleft Text NULL,
-								 createdDate bigint NULL,
-								 lastmodified bigint NULL, 
-								 bidCount int DEFAULT 0,
-								 PRIMARY KEY (auctionNumber))")
-
-				@db.execute("CREATE TRIGGER abidCounter
-									AFTER UPDATE
-									ON auctions
-								BEGIN
-									UPDATE auctions 
-									SET bidCount = bidCount + 1
-									WHERE bid > OLD.bid AND NEW.auctionNumber = auctionNumber;
-								END")
-
-
-				@db.execute("CREATE TABLE auctionsLog (
-								 auctionNumber bigint NOT NULL,
-								 item int NULL,
-								 owner text NULL,
-								 bid bigint NULL,
-								 buyout bigint NULL,
-								 quantity int NULL,
-								 timeleft Text NULL,
-								 createdDate bigint NULL,
-								 lastmodified bigint NULL, 
-								 bidCount int DEFAULT 0,
-								 PRIMARY KEY (auctionNumber))")
-
+			if not @DB.table_exists?(@auctionsTable)
 				
-				@db.execute("CREATE TABLE items (
-								 ID int NOT NULL,
-								 Name text NULL, 
-								 JSON text NULL, 
-								 PRIMARY KEY (id))")
+				@DB.create_table(@auctionsTable) do
+					Bignum		:auctionNumber, :primary_key => true
+					Integer		:item, :index => true
+					String		:owner, :text => true
+					Bignum		:bid
+					Bignum		:buyout
+					Integer		:quantity
+					String		:timeLeft, :text => true
+					DateTime	:createdDate
+					DateTime	:lastModified, :index => true
+					Integer		:bidCount
+				end
 
-				@db.execute("CREATE INDEX lastmodIDX ON auctions( lastModified)")
-				@db.execute("CREATE INDEX itemIDX ON auctions( item )")
-				@db.execute("CREATE INDEX lastmodLogIDX ON auctionsLog( lastmodified )")
-				@db.execute("CREATE INDEX itemLogIDX ON auctionsLog( item )")
-				@db.execute("CREATE INDEX nameidx ON Items ( Name )")
+			end
+
+			if not @DB.table_exists?(@logTable)
+				
+				@DB.create_table(@logTable) do
+					Bignum		:auctionNumber, :primary_key => true
+					Integer		:item, :index => true
+					String		:owner, :text => true
+					Bignum		:bid
+					Bignum		:buyout
+					Integer		:quantity
+					String		:timeLeft, :text => true
+					DateTime	:createdDate
+					DateTime	:lastModified, :index => true
+					Integer		:bidCount
+				end
+
+			end
+
+			if not @DB.table_exists?(:items)
+				
+				@DB.create_table(:items) do
+					Integer		:id, :primary_key => true
+					String		:name, :text => true, :index => true
+					String		:JSON, :text => true
+				end
 
 			end
 
@@ -93,7 +87,7 @@ class DBmanager
 
 			return auctions
 
-		rescue Exception => e
+		rescue => e
 			puts "Failed to parse auction JSON\n #{e}"
 			@log.error "Failed to parse auction JSON\n #{e}"
 
@@ -105,12 +99,13 @@ class DBmanager
 
 	end
 
-	def readAuctionJSONFile
+	def readAuctionJSONFile(json)
 
 		begin
 			
-			f = File.read("eu.argent-dawn.json", :mode => 'r:utf-8') # Open file as UTF-8
+			#f = File.read("#{@region}.#{@realm}.json", :mode => 'r:utf-8') # Open file as UTF-8
 
+			f = json
 			f = f.lines.to_a[3..-1].join # Remove 3 first lines
 			f = f.gsub!( /\r\n?/, "\n" ) # Replace windows line endings with unix ( CRFL to FL )
 			f = f.chomp("]}\n}").gsub!(",\n", "\n") # Remove ending of file and remove trailing ',' on each line
@@ -120,7 +115,7 @@ class DBmanager
 
 			return f
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to read auction JSON file\n #{e}"
 			@log.error "Failed to read auction JSON file\n #{e}"
@@ -140,69 +135,53 @@ class DBmanager
 
 		begin
 
-		@db.transaction
-
 			puts "Loading new auctions into the database and updating old."
 			@log.info "Loading new auctions into the database and updating old."
 
-			auctions.lines.each do |line|
-				
-				auction = Yajl::Parser.parse(line)
+			
+			auctionsTBL = @DB.from(@auctionsTable)
 
-				@db.execute("INSERT OR IGNORE INTO auctions (
-								auctionNumber, 
-								item, 
-								owner, 
-								bid, 
-								buyout, 
-								quantity, 
-								timeleft, 
-								createdDate, 
-								lastmodified)
-								values ( 
-									:auctionNumber, 
-									:item, 
-									:owner, 
-									:bid, 
-									:buyout, 
-									:quantity, 
-									:timeLeft, 
-									:lastmodified , 
-									:lastmodified)", 
-									"auctionNumber" => auction["auc"], 
-									"item" => auction["item"], 
-									"owner" => auction["owner"], 
-									"bid" => auction["bid"], 
-									"buyout" => auction["buyout"], 
-									"quantity" => auction["quantity"], 
-									"timeLeft" => auction["timeLeft"], 
-									"lastmodified" => lastModified)
+			start = Time.now
 
-				@db.execute("UPDATE auctions 
-								SET bid = :bid, 
-								timeLeft = :timeLeft, 
-								lastmodified = :lastmodified 
-								WHERE auctionNumber = :auctionNumber", 
-								"bid" => auction["bid"], 
-								"timeLeft" => auction["timeLeft"], 
-								"lastmodified" => lastModified, 
-								"auctionNumber" => auction["auc"])	
+			@DB.transaction do
+
+				auctions.lines.each do |line|
+
+					auction = Yajl::Parser.parse(line)
+
+					if 1 != auctionsTBL.where(:auctionNumber => auction["auc"]).update(	:bid => auction["bid"], 
+																						:buyout => auction["buyout"],
+																						:timeLeft => auction["timeLeft"],
+																						:lastModified => lastModified
+																					)
+
+						auctionsTBL.exclude(:auctionNumber => auction["auc"]).insert(	:auctionNumber => auction["auc"],
+																						:item => auction["item"], 
+																						:owner => auction["owner"], 
+																						:bid => auction["bid"], 
+																						:buyout => auction["buyout"], 
+																						:quantity => auction["quantity"], 
+																						:timeLeft => auction["timeLeft"],
+																						:createdDate => lastModified,
+																						:lastModified => lastModified
+																					)
+					end
+
+				end
+
 
 			end
 
-		@db.commit
+			puts "Auction import complete."
+			@log.info "Auction import complete."
+			puts "Done in #{Time.now - start}"
+			return true
 
-		puts "Auction import complete."
-		@log.info "Auction import complete."
-
-		return true
-
-		rescue Exception => e
+		rescue => e
 
 			puts "Failed to import auctions\n #{e}"
 			@log.error "Failed to import auctions\n #{e}"
-			@db.rollback if @db.transaction_active?
-
+			
 			return false
 
 		end
@@ -217,17 +196,9 @@ class DBmanager
 			puts "Deleting expired auctions."
 			@log.info "Deleting expired auctions."
 
-			@db.transaction
+			auctionDataset = @DB.from(@auctionsTable)
 
-			@db.execute("delete FROM auctions 
-						 WHERE lastmodified !=:lastmodified",
-						 "lastmodified" => lastModified)
-
-			@db.execute("DELETE
-						 FROM auctionsLog
-						 WHERE lastmodified < strftime('%s','now', '-2 months')")
-
-			@db.commit
+			auctionDataset.exclude(:lastModified => lastModified).delete
 
 			puts "Old auctions has been deleted from the database."
 			@log.info "Old auctions has been deleted from the database."
@@ -239,7 +210,6 @@ class DBmanager
 			puts "Please download new auction data to get an up-to-date lastmodified."
 			@log.warn "Please download new auction data to get an up-to-date lastmodified."
 
-			@db.rollback if @db.transaction_active?
 			return false
 
 		end
@@ -254,25 +224,25 @@ class DBmanager
 			
 			puts "Moving old auctions to log."
 			@log.info "Moving old auctions to log."
-			@db.transaction
 
-			@db.execute("INSERT OR IGNORE INTO auctionsLog 
-							 SELECT * FROM auctions 
-							 WHERE lastmodified != 0 AND lastmodified < :lastModified", 
-							 "lastModified" => lastModified)
+			logDataset = @DB.from(@logTable)
+			auctionDataset = @DB.from(@auctionsTable)
 
-			@db.commit
+			#whereClause = '"' + @logTable + '"."auctionNumber" IS NULL'
+
+			#logDataset.insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], auctionDataset.left_outer_join(@logTable, :auctionNumber => :auctionNumber).where(whereClause).qualify )
+
+			logDataset.insert_ignore.insert(auctionDataset.where('lastModified < ?', lastModified))
 
 			puts "Successfully moved all old auctions to the log tables."
 			@log.info "Successfully moved all old auctions to the log tables."
 
 			return true
 
-		rescue Exception => e
+		rescue => e
 			
-			puts "Failed to move old auctions to log table\ #{e}"
-			@log.error "Failed to move old auctions to log table\ #{e}"
-			@db.rollback if @db.transaction_active?
+			puts "Failed to move old auctions to log table\n #{e}"
+			@log.error "Failed to move old auctions to log table\n #{e}"
 			return false
 
 		end
@@ -294,7 +264,7 @@ class DBmanager
 			end
 
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to check if item exists in the database."
 			puts e
@@ -307,9 +277,9 @@ class DBmanager
 
 		begin
 			
-			@db.execute("INSERT OR IGNORE INTO items VALUES (:ID, :Name, :JSON)", "ID" => itemID, "Name" => itemName, "JSON" => itemJSON)
+			@DB[:items].insert(:id => itemID, :name => itemName, :JSON => itemJSON)
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to insert item into database.\ #{e}"
 			@log.error "Failed to insert item into database.\ #{e}"
@@ -323,17 +293,19 @@ class DBmanager
 
 		begin
 
-			missingItems = Array.new
+			missingItems = []
 
-			@db.execute("SELECT item FROM auctionsLog EXCEPT SELECT ID FROM Items") do |item|
+			logDataset = @DB.from(@logTable)
 
-				missingItems << item
+			logDataset.distinct(:item).exclude(:item => @DB[:items].select(:id)).limit(20).each do |item|
+
+				missingItems << item[:item]
 
 			end
 
-			return missingItems.uniq[0..19]
+			return missingItems
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to determine which items are not in the database.\n #{e}"
 			@log.error "Failed to determine which items are not in the database.\n #{e}"
@@ -347,15 +319,17 @@ class DBmanager
 
 	def insertMissingItems(missingItems,itemJSON)
 
-		@db.transaction
+			missingItems.each_with_index do |item,i|
 
-		missingItems.each_with_index do |item,i|
+				self.insertItem(item[0], itemJSON[i][0], itemJSON[i][1])
 
-			self.insertItem(item[0], itemJSON[i][0], itemJSON[i][1])
+			end
+		
+	end
 
-		end
+	def close
 
-		@db.commit
+		@DB.disconnect
 		
 	end
 

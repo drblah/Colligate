@@ -1,6 +1,7 @@
 # encoding: utf-8
 require "yajl"
 require "net/http"
+require "open-uri"
 require "date"
 require "logger"
 
@@ -18,19 +19,19 @@ class Downloader
 # Makes a request to the regional api for the URL to a specific server's auction database.
 	def getauctionURL
 		begin
-			uri = URI("https://" + @regionURL + "/wow/auction/data/" + @realm + "?locale=#{@locale}" + "&apikey=#{@apikey}")
+			uri = "https://" + @regionURL + "/wow/auction/data/" + @realm + "?locale=#{@locale}" + "&apikey=#{@apikey}"
 			puts uri
-			jsontemp = Yajl::Parser.parse(Net::HTTP.get(uri)) # Parse JSON to ruby object.
+			jsontemp = Yajl::Parser.parse(open(uri)) # Parse JSON to ruby object.
 
 			dataURL = jsontemp["files"][0]["url"]
-			lastModified = jsontemp["files"][0]["lastModified"]/1000
+			lastModified = Time.at(jsontemp["files"][0]["lastModified"]/1000).to_datetime
 
-			puts "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{Time.at(lastModified).to_datetime}"
-			@log.info "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{Time.at(lastModified).to_datetime}"
+			puts "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{lastModified}"
+			@log.info "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{lastModified}"
 
 			return URI(dataURL),lastModified
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to get the Auction data URL."
 			@log.error "Failed to get the Auction data URL."
@@ -39,7 +40,7 @@ class Downloader
 			puts e
 			@log.error e
 
-			return nil
+			return false
 
 		end
 		
@@ -50,17 +51,32 @@ class Downloader
 
 		begin
 
-			auctionJSONfile = File.new("#{@region}.#{@realm}.json", "w+") # Due to the size of the database it is stored as a file on disk.
+			#auctionJSONfile = File.new("#{@region}.#{@realm}.json", "w+") # Due to the size of the database it is stored as a file on disk.
 
-			auctionJSONfile.write(Net::HTTP.get(uri))
-			auctionJSONfile.close()
+			json = Net::HTTP.get(uri)
 
-			puts "Successfully downloaded auction data."
-			@log.info "Successfully downloaded auction data."
+			#auctionJSONfile.write(json)
+			#auctionJSONfile.close()
 
-			return true
 
-		rescue Exception => e
+			
+			if json[0..400].include? "<title>404 Not Found</title>"
+				
+				puts "Failed to download the Auction JSON data.\n #{json}"
+				@log.error "Failed to download the Auction JSON data.\n #{json}"
+
+				return false
+
+			else
+			
+				puts "Successfully downloaded auction data."
+				@log.info "Successfully downloaded auction data."
+
+				return json
+
+			end
+
+		rescue => e
 			
 			puts "Failed to download the Auction JSON data.\n #{e}"
 			@log.error "Failed to download the Auction JSON data.\n #{e}"
@@ -74,32 +90,32 @@ class Downloader
 	def getItemJSON(itemID) # Resolves an item's name from the battle.net api.
 
 		begin
-			uri = URI("https://" + @regionURL + "/wow/item/" + String(itemID) + "?locale=#{@locale}" + "&apikey=#{@apikey}")
-
-			itemJSON = Net::HTTP.get(uri)
+			uri = "https://" + @regionURL + "/wow/item/" + String(itemID) + "?locale=#{@locale}" + "&apikey=#{@apikey}"
+			puts "Item request #{uri}"
+			itemJSON = open(uri).string
 
 			if itemJSON.include? "Internal server error."
 			
 				puts "Failed to retrieve item JSON.\n Error message from the server: #{itemJSON}"
 				@log.error "Failed to retrieve item JSON.\n Error message from the server: #{itemJSON}"
 
-				return nil, nil
+				return false
 
-			elsif itemJSON.include? "unable to get item information."
-				
-				puts "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
-				@log.info "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
-
-				html = Net::HTTP.get(URI("http://www.wowhead.com/item=#{itemID}"))
-
-				name = html.scan(/<title>([^<>]*)<\/title>/)[0][0].split(' - Item - World of Warcraft').first
-
-				return name,nil
+#			elsif itemJSON.include? "unable to get item information."
+#				
+#				puts "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
+#				@log.info "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
+#
+#				html = Net::HTTP.get(URI("http://www.wowhead.com/item=#{itemID}"))
+#
+#				name = html.scan(/<title>([^<>]*)<\/title>/)[0][0].split(' - Item - World of Warcraft').first
+#
+#				return name,nil
 
 			else
 
-				puts "Successfully retrived item JSON."
-				@log.info "Successfully retrived item JSON."
+				puts "Successfully retrived JSON for #{itemID}."
+				@log.info "Successfully retrived JSON for #{itemID}."
 
 				return Yajl::Parser.parse(itemJSON)["name"], itemJSON
 
@@ -107,10 +123,12 @@ class Downloader
 
 			
 
-		rescue Exception => e
+		rescue => e
 			
 			puts "Failed to connect to battle.net\n #{e}"
 			@log.error "Failed to connect to battle.net\n #{e}"
+
+			return false
 
 		end
 	end
