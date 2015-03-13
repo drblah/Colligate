@@ -11,9 +11,9 @@ Request all active auctions on a realm for all three factions.
 
 Download and parse the JSON file containing auction data from the WoW API.
 
-Save the data in a SQLite3 database.
+Save the data in a database. PostgreSQL or MySQL.
 
-Move outdated auctions to a secondary history database.
+Store ended auctions in an archive.
 
 Resolve item id numbers to actual item names and item info, such as stats etc.
 
@@ -22,14 +22,14 @@ Store item info in a local cache for faster lookup.
 Dependencies
 =================
 This program requires on the following Ruby gems:
-Sqlite3
+Sequel
+mysql2/pg - Depending on the database in use.
 Yajl
-work_queue
 
 To install run:
 
 ```
-gem install sqlite3 yajl-ruby work_queue
+gem install sequel yajl-ruby [mysql2 or pg]
 ```
 
 How to use
