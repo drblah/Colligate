@@ -7,7 +7,7 @@ require "sequel"
 # This class will handle all calls to the database.
 class DBmanager
 
-	def initialize(region, realm)
+	def initialize(region, realm, connection)
 
 			@region = region
 			@realm = realm
@@ -19,8 +19,8 @@ class DBmanager
 			dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
 			# Open database if it exists.
-			@DB = Sequel.connect("mysql2://cg:colligate@localhost/colligate")
-
+			#@DB = Sequel.connect("postgres://cg:colligate@localhost/colligate")
+			@DB = connection
 			#@DB.loggers << Logger.new(STDOUT)
 			
 			# Create database and the tables if the database does not exist
@@ -72,38 +72,9 @@ class DBmanager
 			
 	end
 
-	# Load the downloaded server database into memory.
-	def readAuctionJSON
-		
-		begin
-			#Reads the JSON file containing the auction database download from the server
-			puts "Parsing auction JSON."
-			@log.info "Parsing auction JSON."
-			auctions = Yajl::Parser.parse(File.read("#{@region}.#{@realm}.json", :mode => 'r:utf-8'))
-
-			puts "Auction JSON successfully parsed."
-			@log.info "Auction JSON successfully parsed."
-
-
-			return auctions
-
-		rescue => e
-			puts "Failed to parse auction JSON\n #{e}"
-			@log.error "Failed to parse auction JSON\n #{e}"
-
-
-			return nil
-
-		end
-		
-
-	end
-
 	def readAuctionJSONFile(json)
 
 		begin
-			
-			#f = File.read("#{@region}.#{@realm}.json", :mode => 'r:utf-8') # Open file as UTF-8
 
 			f = json
 			f = f.lines.to_a[3..-1].join # Remove 3 first lines
@@ -232,7 +203,9 @@ class DBmanager
 
 			#logDataset.insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], auctionDataset.left_outer_join(@logTable, :auctionNumber => :auctionNumber).where(whereClause).qualify )
 
-			logDataset.insert_ignore.insert(auctionDataset.where('lastModified < ?', lastModified))
+			logDataset.insert(auctionDataset.where('"lastModified" < ?', lastModified).exclude(:auctionNumber => logDataset.select(:auctionNumber)))
+
+			#logDataset.insert_ignore.insert(auctionDataset.where('lastModified < ?', lastModified))
 
 			puts "Successfully moved all old auctions to the log tables."
 			@log.info "Successfully moved all old auctions to the log tables."

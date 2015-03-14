@@ -4,6 +4,7 @@ require "logger"
 require "yaml"
 require "thread"
 require "date"
+require "Sequel"
 
 require_relative "Downloader"
 require_relative "DBmanager"
@@ -42,6 +43,8 @@ end
 
 puts @apikey
 
+dbConnection = Sequel.connect("postgres://cg:colligate@localhost/colligate")
+
 worker = Worker.new
 timeTable = []
 
@@ -70,7 +73,7 @@ while true
 
 			if lastModified > oldLastModified
 
-				dbhandeler = DBmanager.new(r["region"], r["realm"])
+				dbhandeler = DBmanager.new(r["region"], r["realm"], dbConnection)
 
 				# Find index at which the time is stored for this realm in the timeTable
 				index = timeTable.find_index(timeTable.find {|t| t[:realm] == r["realm"]})
@@ -131,7 +134,7 @@ while true
 		realms.each do |r|
 
 			downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
-			dbhandeler = DBmanager.new(r["region"], r["realm"])
+			dbhandeler = DBmanager.new(r["region"], r["realm"], dbConnection)
 
 			missingItems = dbhandeler.itemsNotInDB
 
@@ -151,6 +154,16 @@ while true
 
 
 	needUpdate = false
+
+	nextUpdate = []
+
+	timeTable.each do |time|
+
+		nextUpdate << time[:lastModified]
+
+	end
+
+	puts "Next update will be at #{nextUpdate.sort.first.to_time + (60*30)}"
 
 	while true
 

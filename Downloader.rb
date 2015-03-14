@@ -51,13 +51,15 @@ class Downloader
 
 		begin
 
-			#auctionJSONfile = File.new("#{@region}.#{@realm}.json", "w+") # Due to the size of the database it is stored as a file on disk.
+			json = nil
 
-			json = Net::HTTP.get(uri)
+			# Sometimes battle.net does not return anything. Try three times to see if we can get the data.
+			for i in 1..3
 
-			#auctionJSONfile.write(json)
-			#auctionJSONfile.close()
-
+				json = Net::HTTP.get(uri)
+				break if json.class != nil.class
+				puts "Retrying download. Run number #{i} from: #{uri}"
+			end
 
 			
 			if json[0..400].include? "<title>404 Not Found</title>"
