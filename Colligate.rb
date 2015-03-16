@@ -4,7 +4,7 @@ require "logger"
 require "yaml"
 require "thread"
 require "date"
-require "Sequel"
+require "sequel"
 
 require_relative "Downloader"
 require_relative "DBmanager"
