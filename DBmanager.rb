@@ -210,18 +210,19 @@ class DBmanager
             #logDataset.insert(auctionDataset.where('"lastModified" < ?', lastModified).exclude(:auctionNumber => logDataset.select(:auctionNumber)))
 
             query = %{INSERT INTO "#{@logTable}"
-                    SELECT source."auctionNumber",
-                        source.item,
-                        source.owner,
-                        source.bid,
-                        source.buyout,
-                        source.quantity,
-                        source."timeLeft",
-                        source."createdDate",
-                        source."lastModified"
-                    FROM "#{@auctionsTable}" AS source
-                    LEFT JOIN "#{@logTable}" AS destination ON source."auctionNumber" = destination."auctionNumber"
-                    WHERE destination."auctionNumber" IS NULL AND source."lastModified" < '#{lastModified.strftime("%Y-%m-%e %H:%M:%S")'}}
+                SELECT source."auctionNumber",
+                   source.item,
+                   source.owner,
+                   source.bid,
+                   source.buyout,
+                   source.quantity,
+                   source."timeLeft",
+                   source."createdDate",
+                   source."lastModified"
+                 FROM "#{@auctionsTable}" AS source
+                 LEFT JOIN "#{@logTable}" AS destination ON source."auctionNumber" = destination."auctionNumber"
+                 WHERE destination."auctionNumber" IS NULL AND source."lastModified" < '#{lastModified.strftime("%Y-%m-%e %H:%M:%S")}' }
+
 
             @DB.run(query)
 
