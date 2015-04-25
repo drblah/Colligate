@@ -15,21 +15,32 @@ class Downloader
 		@realm = realm # Server or realm. Note that spaces in the realm name is replaced by dash as in: "Argent dawn" becomes "argent-dawn".
 		@locale = locale
 		@apikey = apikey
+
+		refreshRealmAPI
 	end
+
+	def getLastModified
+		return @lastModified
+	end
+
+	def getDataURL
+		return @dataURL		
+	end
+
 # Makes a request to the regional api for the URL to a specific server's auction database.
-	def getauctionURL
+	def refreshRealmAPI
 		begin
 			uri = "https://" + @regionURL + "/wow/auction/data/" + @realm + "?locale=#{@locale}" + "&apikey=#{@apikey}"
 			puts uri
 			jsontemp = Yajl::Parser.parse(open(uri)) # Parse JSON to ruby object.
 
-			dataURL = jsontemp["files"][0]["url"]
-			lastModified = Time.at(jsontemp["files"][0]["lastModified"]/1000).to_datetime
+			@dataURL = jsontemp["files"][0]["url"]
+			@lastModified = Time.at(jsontemp["files"][0]["lastModified"]/1000)
 
-			puts "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{lastModified}"
-			@log.info "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{lastModified}"
+			puts "Successfully retrived data URL for #{uri}\nURL: #{@dataURL}\nLatest data is from #{@lastModified}"
+			@log.info "Successfully retrived data URL for #{uri}\nURL: #{@dataURL}\nLatest data is from #{@lastModified}"
 
-			return URI(dataURL),lastModified
+			return true
 
 		rescue => e
 			
@@ -47,36 +58,19 @@ class Downloader
 		
 	end
 # Downloads the actual auction database file from a specific server. The fileformat is JSON.
-	def downloadAuctionJSON(uri)
+	def getAuctionJSON
 
 		begin
 
-			json = nil
+			json = Net::HTTP.get(URI(@dataURL))
 
-			# Sometimes battle.net does not return anything. Try three times to see if we can get the data.
-			for i in 1..3
+			if !json.include? "ownerRealm"
+			
+				raise "Recieved something unexpected: \n #{json} \n of class: #{json.class}"
 
-				json = Net::HTTP.get(uri)
-				break if json.class != nil.class
-				puts "Retrying download. Run number #{i} from: #{uri}"
 			end
 
-			
-			if json[0..400].include? "<title>404 Not Found</title>"
-				
-				puts "Failed to download the Auction JSON data.\n #{json}"
-				@log.error "Failed to download the Auction JSON data.\n #{json}"
-
-				return false
-
-			else
-			
-				puts "Successfully downloaded auction data."
-				@log.info "Successfully downloaded auction data."
-
-				return json
-
-			end
+			return json
 
 		rescue => e
 			
