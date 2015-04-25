@@ -72,7 +72,7 @@ class DBmanager
             
     end
 
-    def readAuctionJSONFile(json)
+    def trimAuctionJSON(json)
 
         begin
 
@@ -81,27 +81,35 @@ class DBmanager
             f = f.gsub!( /\r\n?/, "\n" ) # Replace windows line endings with unix ( CRFL to FL )
             f = f.chomp("]}\n}").gsub!(",\n", "\n") # Remove ending of file and remove trailing ',' on each line
 
-            puts "Auction JSONfile successfully read."
-            @log.info "Auction JSONfile successfully read."
+            puts "Auction JSONfile successfully trimmed."
+            @log.info "Auction JSONfile successfully trimmed."
 
             return f
 
         rescue => e
             
-            puts "Failed to read auction JSON file\n #{e}"
-            @log.error "Failed to read auction JSON file\n #{e}"
+            puts "Failed to trim auction JSON file\n #{e}"
+            @log.error "Failed to trim auction JSON file\n #{e}"
+
+            return false
 
         end
         
     end
 
     # Writes the loaded aucitons into the SQLite3 database
-    def writeAuctionsToDB(auctions, lastModified)
+    def writeAuctionsToDB(json, lastModified)
 
-        if lastModified == 0
+        auctions = trimAuctionJSON(json)
+
+        if auctions == false
+            return false
+        end
+
+        if lastModified == nil
             puts "lastmodified variable not set! Please make sure to load in a fresh set of data."
             @log.warn "lastmodified variable not set! Please make sure to load in a fresh set of data."
-            return nil
+            return false
         end
 
         begin
@@ -120,27 +128,23 @@ class DBmanager
 
                     auction = Yajl::Parser.parse(line)
 
-                    query = %{}
+                    if 1 != auctionsTBL.where(:auctionNumber => auction["auc"]).update( :bid => auction["bid"], 
+                                                                                        :buyout => auction["buyout"],
+                                                                                        :timeLeft => auction["timeLeft"],
+                                                                                        :lastModified => lastModified
+                                                                                    )
 
-                    @DB.run
-
-#                    if 1 != auctionsTBL.where(:auctionNumber => auction["auc"]).update( :bid => auction["bid"], 
-#                                                                                        :buyout => auction["buyout"],
-#                                                                                        :timeLeft => auction["timeLeft"],
-#                                                                                        :lastModified => lastModified
-#                                                                                    )
-#
-#                        auctionsTBL.exclude(:auctionNumber => auction["auc"]).insert(   :auctionNumber => auction["auc"],
-#                                                                                        :item => auction["item"], 
-#                                                                                        :owner => auction["owner"], 
-#                                                                                        :bid => auction["bid"], 
-#                                                                                        :buyout => auction["buyout"], 
-#                                                                                        :quantity => auction["quantity"], 
-#                                                                                        :timeLeft => auction["timeLeft"],
-#                                                                                        :createdDate => lastModified,
-#                                                                                        :lastModified => lastModified
-#                                                                                    )
-#                    end
+                        auctionsTBL.exclude(:auctionNumber => auction["auc"]).insert(   :auctionNumber => auction["auc"],
+                                                                                        :item => auction["item"], 
+                                                                                        :owner => auction["owner"], 
+                                                                                        :bid => auction["bid"], 
+                                                                                        :buyout => auction["buyout"], 
+                                                                                        :quantity => auction["quantity"], 
+                                                                                        :timeLeft => auction["timeLeft"],
+                                                                                        :createdDate => lastModified,
+                                                                                        :lastModified => lastModified
+                                                                                    )
+                    end
 
                 end
 
@@ -164,7 +168,7 @@ class DBmanager
     end
 
 
-    def deleteold(lastModified)
+    def deleteOld(lastModified)
 
         if(lastModified !=0)
 
@@ -193,7 +197,7 @@ class DBmanager
     end
 
 
-    def moveoldtolog(lastModified)
+    def moveOldtoLog(lastModified)
 
         begin
             
@@ -325,6 +329,26 @@ class DBmanager
 
         @DB.disconnect
         
+    end
+
+    def getLastModified
+        
+        result = @DB.fetch(%{SELECT "lastModified" FROM "#{@auctionsTable}" ORDER BY "lastModified" DESC LIMIT 1})
+
+        result.each do |timestamp|
+
+            @time = timestamp[:lastModified]
+
+        end
+
+        if @time == nil
+            @time = Time.new(1970,1,1)    
+        end
+
+        
+
+        return @time
+
     end
 
 

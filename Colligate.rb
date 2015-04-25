@@ -8,7 +8,7 @@ require "sequel"
 
 require_relative "Downloader"
 require_relative "DBmanager"
-require_relative "Worker"
+#require_relative "Worker"
 
 log = Logger.new("log.log")
 
@@ -33,168 +33,57 @@ rescue => e
 
 end
 
-@tokens = Queue.new
-
-(1..2).each do
-
-	@tokens << 1
-
-end
-
-puts @apikey
-
 dbConnection = Sequel.connect("postgres://cg:colligate@localhost/colligate")
 
-worker = Worker.new
-timeTable = []
-
-realms.each do |r|
-
-	timeTable << {realm: r["realm"], lastModified: Date.new(1970,1,1).to_datetime}
-
-end
-
 while true
-	
+
 	realms.each do |r|
 
-		lastModified = Date.new(1970,1,1).to_datetime
+	dbManager = DBmanager.new(r["region"], r["realm"], dbConnection)
+	downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
 
-		downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
+	dbLastModified = dbManager.getLastModified
+	webLastModified = downloader.getLastModified
 
-		# Get url to the auction data. Also returns the time/date of when the data was last updated.
-		dataInfo = downloader.getauctionURL
+	puts "#{r["realm"]} was last updated: #{dbLastModified}"
 
-		if dataInfo != false
-			lastModified = dataInfo[1]
+	# Begin update if the battle.net data is newer than the data we have in the database
+	if webLastModified > dbLastModified
 		
-			# Find the last modified time for the realm we are looking at now.
-			oldLastModified = timeTable.find {|t| t[:realm] == r["realm"]}[:lastModified]
+		auctions = false
 
-			if lastModified > oldLastModified
+		while auctions == false		
+			auctions = downloader.getAuctionJSON
+			sleep 1
+		end
 
-				dbhandeler = DBmanager.new(r["region"], r["realm"], dbConnection)
+		if dbManager.writeAuctionsToDB(auctions,webLastModified)
 
-				# Find index at which the time is stored for this realm in the timeTable
-				index = timeTable.find_index(timeTable.find {|t| t[:realm] == r["realm"]})
-
-				# Update lastmodified
-				timeTable[index][:lastModified] = lastModified
-
-				worker.addJob {
-
-					@tokens.pop
-
-					puts "New data is available. Beginning work..."
-					log.info "New data is available. Beginning work..."
-					
-					json = downloader.downloadAuctionJSON(dataInfo[0])
-
-					success = false
-
-					if json != false
-						
-						success = dbhandeler.writeAuctionsToDB(dbhandeler.readAuctionJSONFile(json),lastModified)
-
-					end
-					
-					if success
-					
-						success = dbhandeler.moveoldtolog(lastModified)
-
-					end
-
-					if success
-						
-						dbhandeler.deleteold(lastModified)
-
-					end
-
-					dbhandeler.close
-
-					@tokens << 1
-
-				}
-
+			if dbManager.moveOldtoLog(webLastModified)
 				
-			end
-
-		end
-
-
-
-	end
-
-	worker.join
-
-	puts "Update jobs finished at #{Time.now}"
-
-	worker.addJob {
-
-		realms.each do |r|
-
-			downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
-			dbhandeler = DBmanager.new(r["region"], r["realm"], dbConnection)
-
-			missingItems = dbhandeler.itemsNotInDB
-
-			missingItems.each do |item|
-
-				iJSON = downloader.getItemJSON(item)
-
-				dbhandeler.insertItem(item, iJSON[0], iJSON[1]) if iJSON != false
+				dbManager.deleteOld(webLastModified)
 
 			end
-
-			dbhandeler.close
-
-		end
-		puts "Item name lookup finished for this run."
-	}
-
-
-	needUpdate = false
-
-	nextUpdate = []
-
-	timeTable.each do |time|
-
-		nextUpdate << time[:lastModified]
-
-	end
-
-	puts "Next update will be at #{nextUpdate.sort.first.to_time + (60*30)}"
-
-	while true
-
-		# Break out of loop if one of the realms have not been updated in 30 minutes
-		timeTable.each do |time|
 			
-			if (Time.now - time[:lastModified].to_time) > (60*30)
-				needUpdate = true
-				puts "#{time[:realm]} has not been updated for 30 minutes."
-			end
-
-		end
-
-		break if needUpdate
-
-		sleep 10
 			
-	end
+		end
+		
+		
+	else
 
+		puts "#{r["realm"]} is up to date. Next update will be at: #{dbLastModified+31*60}"
+
+	end
+	puts "#{(dbLastModified+(31*60)-Time.now)/60} minutes til next update."
+	
+	sleepTime = dbLastModified+(31*60)-Time.now
+
+	sleepTime = 60 if dbLastModified+(31*60)-Time.now < 0
+
+	sleep sleepTime
 
 end
-	
-while true
 
-	option = gets.chomp
 
-	if option == "stop"
-		
-		worker.stopJobs
-
-		exit
-	end
 	
 end
