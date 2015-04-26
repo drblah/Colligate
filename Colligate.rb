@@ -74,6 +74,17 @@ while true
 		puts "#{r["realm"]} is up to date. Next update will be at: #{dbLastModified+31*60}"
 
 	end
+
+	missingItems = dbManager.itemsNotInDB
+
+	missingItems.each do |item|
+
+		iJSON = downloader.getItemJSON(item)
+
+		dbManager.insertItem(item, iJSON[0], iJSON[1]) if iJSON != false
+
+	end
+
 	puts "#{(dbLastModified+(31*60)-Time.now)/60} minutes til next update."
 	
 	sleepTime = dbLastModified+(31*60)-Time.now

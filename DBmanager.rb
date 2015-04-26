@@ -124,29 +124,93 @@ class DBmanager
 
             @DB.transaction do
 
+                query = %{  
+                    CREATE TEMPORARY TABLE tmp
+                       (
+                        "auctionNumber" bigint NOT NULL,
+                        item integer,
+                        owner text,
+                        bid bigint,
+                        buyout bigint,
+                        quantity integer,
+                        "timeLeft" text,
+                        "createdDate" timestamp without time zone,
+                        "lastModified" timestamp without time zone
+                       ) 
+                       ON COMMIT DROP;
+                            }   
+
+                @DB.run(query)
+
                 auctions.lines.each do |line|
 
                     auction = Yajl::Parser.parse(line)
 
-                    if 1 != auctionsTBL.where(:auctionNumber => auction["auc"]).update( :bid => auction["bid"], 
-                                                                                        :buyout => auction["buyout"],
-                                                                                        :timeLeft => auction["timeLeft"],
-                                                                                        :lastModified => lastModified
-                                                                                    )
+                    @DB[:tmp].insert(     :auctionNumber => auction["auc"],
+                                            :item => auction["item"], 
+                                            :owner => auction["owner"], 
+                                            :bid => auction["bid"], 
+                                            :buyout => auction["buyout"], 
+                                            :quantity => auction["quantity"],
+                                            :timeLeft => auction["timeLeft"],
+                                            :createdDate => lastModified,
+                                            :lastModified => lastModified
+                                        )
 
-                        auctionsTBL.exclude(:auctionNumber => auction["auc"]).insert(   :auctionNumber => auction["auc"],
-                                                                                        :item => auction["item"], 
-                                                                                        :owner => auction["owner"], 
-                                                                                        :bid => auction["bid"], 
-                                                                                        :buyout => auction["buyout"], 
-                                                                                        :quantity => auction["quantity"], 
-                                                                                        :timeLeft => auction["timeLeft"],
-                                                                                        :createdDate => lastModified,
-                                                                                        :lastModified => lastModified
-                                                                                    )
-                    end
+#                    if 1 != auctionsTBL.where(:auctionNumber => auction["auc"]).update( :bid => auction["bid"], 
+#                                                                                        :buyout => auction["buyout"],
+#                                                                                        :timeLeft => auction["timeLeft"],
+#                                                                                        :lastModified => lastModified
+#                                                                                    )
+#
+#                        auctionsTBL.exclude(:auctionNumber => auction["auc"]).insert(   :auctionNumber => auction["auc"],
+#                                                                                        :item => auction["item"], 
+#                                                                                        :owner => auction["owner"], 
+#                                                                                        :bid => auction["bid"], 
+#                                                                                        :buyout => auction["buyout"], 
+#                                                                                        :quantity => auction["quantity"], 
+#                                                                                        :timeLeft => auction["timeLeft"],
+#                                                                                        :createdDate => lastModified,
+#                                                                                        :lastModified => lastModified
+#                                                                                    )
+#                    end
 
                 end
+
+                    query = %{
+                        INSERT INTO "eu_argent-dawn_auctions"
+                        SELECT source."auctionNumber",
+                            source.item,
+                            source.owner,
+                            source.bid,
+                            source.buyout,
+                            source.quantity,
+                            source."timeLeft",
+                            source."createdDate",
+                            source."lastModified"
+                        FROM tmp AS source
+                        LEFT JOIN "eu_argent-dawn_auctions" AS target ON target."auctionNumber" = source."auctionNumber"
+                        WHERE target."auctionNumber" IS NULL;
+                    }
+
+                    @DB.run(query)
+
+                    query = %{
+                        UPDATE "eu_argent-dawn_auctions" AS target
+                           SET "auctionNumber"=source."auctionNumber", 
+                            item=source.item, 
+                            owner=source.owner, 
+                            bid=source.bid, 
+                            buyout=source.buyout, 
+                            quantity=source.quantity, 
+                               "timeLeft"=source.quantity, 
+                               "createdDate"=source."createdDate", 
+                               "lastModified"=source."lastModified"
+                         FROM tmp AS source
+                         WHERE target."auctionNumber" = source."auctionNumber";
+                    }
+
+                    @DB.run(query)
 
 
             end
