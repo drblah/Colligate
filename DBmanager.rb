@@ -142,41 +142,29 @@ class DBmanager
 
                 @DB.run(query)
 
+                alist = []
+
                 auctions.lines.each do |line|
+
 
                     auction = Yajl::Parser.parse(line)
 
-                    @DB[:tmp].insert(     :auctionNumber => auction["auc"],
-                                            :item => auction["item"], 
-                                            :owner => auction["owner"], 
-                                            :bid => auction["bid"], 
-                                            :buyout => auction["buyout"], 
-                                            :quantity => auction["quantity"],
-                                            :timeLeft => auction["timeLeft"],
-                                            :createdDate => lastModified,
-                                            :lastModified => lastModified
-                                        )
+                        alist << {  :auctionNumber => auction["auc"],
+                                    :item => auction["item"], 
+                                    :owner => auction["owner"], 
+                                    :bid => auction["bid"], 
+                                    :buyout => auction["buyout"], 
+                                    :quantity => auction["quantity"],
+                                    :timeLeft => auction["timeLeft"],
+                                    :createdDate => lastModified,
+                                    :lastModified => lastModified
+                                    }  
 
-#                    if 1 != auctionsTBL.where(:auctionNumber => auction["auc"]).update( :bid => auction["bid"], 
-#                                                                                        :buyout => auction["buyout"],
-#                                                                                        :timeLeft => auction["timeLeft"],
-#                                                                                        :lastModified => lastModified
-#                                                                                    )
-#
-#                        auctionsTBL.exclude(:auctionNumber => auction["auc"]).insert(   :auctionNumber => auction["auc"],
-#                                                                                        :item => auction["item"], 
-#                                                                                        :owner => auction["owner"], 
-#                                                                                        :bid => auction["bid"], 
-#                                                                                        :buyout => auction["buyout"], 
-#                                                                                        :quantity => auction["quantity"], 
-#                                                                                        :timeLeft => auction["timeLeft"],
-#                                                                                        :createdDate => lastModified,
-#                                                                                        :lastModified => lastModified
-#                                                                                    )
-#                    end
+                    
 
                 end
 
+                @DB[:tmp].multi_insert(alist)
                     query = %{
                         INSERT INTO "eu_argent-dawn_auctions"
                         SELECT source."auctionNumber",
@@ -271,12 +259,6 @@ class DBmanager
             logDataset = @DB.from(@logTable)
             auctionDataset = @DB.from(@auctionsTable)
 
-            #whereClause = '"' + @logTable + '"."auctionNumber" IS NULL'
-
-            #logDataset.insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], auctionDataset.left_outer_join(@logTable, :auctionNumber => :auctionNumber).where(whereClause).qualify )
-
-            #logDataset.insert(auctionDataset.where('"lastModified" < ?', lastModified).exclude(:auctionNumber => logDataset.select(:auctionNumber)))
-
             query = %{INSERT INTO "#{@logTable}"
                 SELECT source."auctionNumber",
                    source.item,
@@ -289,12 +271,9 @@ class DBmanager
                    source."lastModified"
                  FROM "#{@auctionsTable}" AS source
                  LEFT JOIN "#{@logTable}" AS destination ON source."auctionNumber" = destination."auctionNumber"
-                 WHERE destination."auctionNumber" IS NULL AND source."lastModified" < '#{lastModified.strftime("%Y-%m-%e %H:%M:%S")}' }
-
+                 WHERE destination."auctionNumber" IS NULL AND source."lastModified" < '#{lastModified.strftime("%Y-%m-%d %H:%M:%S")}' }
 
             @DB.run(query)
-
-            #logDataset.insert_ignore.insert(auctionDataset.where('lastModified < ?', lastModified))
 
             puts "Successfully moved all old auctions to the log tables."
             @log.info "Successfully moved all old auctions to the log tables."
