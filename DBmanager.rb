@@ -19,12 +19,9 @@ class DBmanager
             dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
             # Open database if it exists.
-            #@DB = Sequel.connect("postgres://cg:colligate@localhost/colligate")
             @DB = connection
-            #@DB.loggers << Logger.new(STDOUT)
             
-            # Create database and the tables if the database does not exist
-
+            # Create tables if they do not exist.
             if not @DB.table_exists?(@auctionsTable)
                 
                 @DB.create_table(@auctionsTable) do
@@ -391,18 +388,6 @@ class DBmanager
         
 
         return @time
-
-    end
-
-
-    def test
-
-        puts "Items in AllianceLog:"
-        puts @db.execute("SELECT COUNT(*) item FROM Alliance")[0]
-        puts "Items in HordeLog:"
-        puts @db.execute("SELECT COUNT(*) item FROM Horde")[0]
-        puts "Items in NeutralLog:"
-        puts @db.execute("SELECT COUNT(*) item FROM Neutral")[0]
 
     end
 
