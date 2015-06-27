@@ -64,7 +64,7 @@ class DBmanager
                 @DB.create_table(:items) do
                     Integer     :id, :primary_key => true
                     String      :name, :text => true, :index => true
-                    String      :JSON, :text => true
+                    json        :JSON
                 end
 
             end
@@ -191,7 +191,7 @@ class DBmanager
                             bid=source.bid, 
                             buyout=source.buyout, 
                             quantity=source.quantity, 
-                               "timeLeft"=source.quantity, 
+                               "timeLeft"=source."timeLeft", 
                                "createdDate"=source."createdDate", 
                                "lastModified"=source."lastModified"
                          FROM tmp AS source
