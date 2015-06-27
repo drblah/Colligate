@@ -102,6 +102,8 @@ class Downloader
 				puts "Item not fount on battle.net\n #{e}"
 				@log.error puts "Item not fount on battle.net\n #{e}"
 
+				return "not found"
+
 			else
 
 				puts "Successfully retrived JSON for #{itemID}."
