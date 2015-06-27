@@ -62,6 +62,7 @@ class DBmanager
                     Integer     :id, :primary_key => true
                     String      :name, :text => true, :index => true
                     json        :JSON
+                    boolean     :deprecated
                 end
 
             end
@@ -363,6 +364,12 @@ class DBmanager
 
             end
         
+    end
+
+    def setDeprecated(itemID)
+        
+        @DB.run(%{INSERT INTO items(id, deprecated) VALUES (#{itemID}, #{true})})
+
     end
 
     def close

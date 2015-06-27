@@ -81,7 +81,16 @@ while true
 
 		iJSON = downloader.getItemJSON(item)
 
-		dbManager.insertItem(item, iJSON[0], iJSON[1]) if iJSON != false
+		if iJSON == true
+		
+			dbManager.insertItem(item, iJSON[0], iJSON[1])
+
+		elsif iJSON == "not found"
+
+			dbManager.setDeprecated(item)
+			
+
+		end
 
 	end
 
