@@ -25,7 +25,7 @@ end
 begin
 	
 	puts "Please enter your API key:"
-	@apikey = gets.chomp
+	@apikey = ARGV[0]
 
 rescue => e
 	
