@@ -97,6 +97,17 @@ class Downloader
 
 				return false
 
+			elsif itemJSON.include? %{"availableContexts":["trade-skill"]}
+				
+				puts "Successfully retrived JSON for #{itemID}. Crafted item detected and treating it as such"
+				@log.info "Successfully retrived JSON for #{itemID}. Crafted item detected and treating it as such"
+
+				uri = "https://#{@regionURL}/wow/item/#{itemID}/trade-skill?locale=#{@locale}&apikey=#{@apikey}"
+
+				itemJSON = open(uri).string
+
+				return Yajl::Parser.parse(itemJSON)["name"], itemJSON
+
 			else
 
 				puts "Successfully retrived JSON for #{itemID}."
