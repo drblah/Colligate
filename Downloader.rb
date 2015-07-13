@@ -97,13 +97,6 @@ class Downloader
 
 				return false
 
-			elsif itemJSON.include? "404 Not Found"
-				
-				puts "Item not fount on battle.net\n #{e}"
-				@log.error puts "Item not fount on battle.net\n #{e}"
-
-				return "not found"
-
 			else
 
 				puts "Successfully retrived JSON for #{itemID}."
@@ -115,12 +108,17 @@ class Downloader
 
 			
 
-		rescue => e
+		rescue OpenURI::HTTPError => e
 			
-			puts "Failed to connect to battle.net\n #{e}"
-			@log.error "Failed to connect to battle.net\n #{e}"
+			#puts "Failed to connect to battle.net\n #{e}"
+			#@log.error "Failed to connect to battle.net\n #{e}"
 
-			return false
+			#return false
+
+			puts "Item not fount on battle.net\n #{e}"
+			@log.error puts "Item not fount on battle.net\n #{e}"
+
+			return "not found"
 
 		end
 	end
