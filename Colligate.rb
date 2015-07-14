@@ -1,6 +1,5 @@
 # encoding: utf-8
 require "yajl"
-require "logger"
 require "yaml"
 require "thread"
 require "date"
@@ -8,9 +7,6 @@ require "sequel"
 
 require_relative "Downloader"
 require_relative "DBmanager"
-#require_relative "Worker"
-
-log = Logger.new("log.log")
 
 begin
 
@@ -81,7 +77,7 @@ while true
 
 		iJSON = downloader.getItemJSON(item)
 
-		if iJSON == true
+		if iJSON.size == 2
 		
 			dbManager.insertItem(item, iJSON[0], iJSON[1])
 

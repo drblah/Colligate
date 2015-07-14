@@ -10,7 +10,6 @@ class Downloader
 
 	def initialize(region, realm, locale, apikey)
 		@log = Logger.new("log.log")
-		@region = region
 		@regionURL = "#{region}.api.battle.net" # Region can be eu.battle.net for europe ur us.battle.net for us.
 		@realm = realm # Server or realm. Note that spaces in the realm name is replaced by dash as in: "Argent dawn" becomes "argent-dawn".
 		@locale = locale
@@ -61,8 +60,7 @@ class Downloader
 	def getAuctionJSON
 
 		begin
-
-			json = Net::HTTP.get(URI(@dataURL))
+			json = open(@dataURL).read
 
 			if !json.include? "ownerRealm"
 			
