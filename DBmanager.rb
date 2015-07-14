@@ -9,14 +9,10 @@ class DBmanager
 
     def initialize(region, realm, connection)
 
-            @region = region
-            @realm = realm
-
             @auctionsTable = "#{region}_#{realm}_auctions"
             @logTable = "#{region}_#{realm}_auctionsLog"
 
             @log = Logger.new("log.log")
-            dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
             # Open database if it exists.
             @DB = connection
@@ -114,9 +110,6 @@ class DBmanager
 
             puts "Loading new auctions into the database and updating old."
             @log.info "Loading new auctions into the database and updating old."
-
-            
-            auctionsTBL = @DB.from(@auctionsTable)
 
             start = Time.now
 
@@ -254,9 +247,6 @@ class DBmanager
             puts "Moving old auctions to log."
             @log.info "Moving old auctions to log."
 
-            logDataset = @DB.from(@logTable)
-            auctionDataset = @DB.from(@auctionsTable)
-
             query = %{INSERT INTO "#{@logTable}"
                 SELECT source."auctionNumber",
                    source.item,
@@ -288,28 +278,6 @@ class DBmanager
 
             
         
-    end
-
-    def itemExistsInDB?(itemID) # Check if a single item exists in the Items table
-
-        begin
-            
-            @db.execute("SELECT COUNT(*) FROM items WHERE ID = :ID", "ID" => itemID) do |item|
-
-                return true if item[0] == 1
-
-                return false
-        
-            end
-
-
-        rescue => e
-            
-            puts "Failed to check if item exists in the database."
-            puts e
-
-        end
-
     end
 
     def insertItem(itemID, itemName, itemJSON) # Inserts an item into the Items table for name resolusion.
@@ -382,19 +350,21 @@ class DBmanager
         
         result = @DB.fetch(%{SELECT "lastModified" FROM "#{@auctionsTable}" ORDER BY "lastModified" DESC LIMIT 1})
 
+        time = nil
+
         result.each do |timestamp|
 
-            @time = timestamp[:lastModified]
+            time = timestamp[:lastModified]
 
         end
 
-        if @time == nil
-            @time = Time.new(1970,1,1)    
+        if time == nil
+            time = Time.new(1970,1,1)    
         end
 
         
 
-        return @time
+        return time
 
     end
 
