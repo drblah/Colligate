@@ -11,7 +11,7 @@ Request all active auctions on a realm for all three factions.
 
 Download and parse the JSON file containing auction data from the WoW API.
 
-Save the data in a database. PostgreSQL or MySQL.
+Save the data in a PostgreSQL database.
 
 Store ended auctions in an archive.
 
@@ -23,13 +23,14 @@ Dependencies
 =================
 This program requires on the following Ruby gems:
 Sequel
-mysql2/pg - Depending on the database in use.
+sequel_pg
+pg
 Yajl
 
 To install run:
 
 ```
-gem install sequel yajl-ruby [mysql2 or pg]
+gem install sequel sequel_pg yajl-ruby pg
 ```
 
 How to use
@@ -98,8 +99,8 @@ In the list, I search for argent dawn and find this:
 ```
 To make Colliage download data from Argent Dawn, I will have to insert "argent-dawn" as realm and eu as region into settings.yaml.
 
-Run the main program “Colligate.rb”.
+Run the main program “Colligate.rb” and add your battle.net api key as a launch parameter.
 
 ```
-ruby Colligate.rb
+ruby Colligate.rb [you-api-key]
 ```
