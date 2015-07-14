@@ -10,26 +10,36 @@ class Downloader
 
 	def initialize(region, realm, locale, apikey)
 		@log = Logger.new("log.log")
-		@region = region
 		@regionURL = "#{region}.api.battle.net" # Region can be eu.battle.net for europe ur us.battle.net for us.
 		@realm = realm # Server or realm. Note that spaces in the realm name is replaced by dash as in: "Argent dawn" becomes "argent-dawn".
 		@locale = locale
 		@apikey = apikey
+
+		refreshRealmAPI
 	end
+
+	def getLastModified
+		return @lastModified
+	end
+
+	def getDataURL
+		return @dataURL		
+	end
+
 # Makes a request to the regional api for the URL to a specific server's auction database.
-	def getauctionURL
+	def refreshRealmAPI
 		begin
 			uri = "https://" + @regionURL + "/wow/auction/data/" + @realm + "?locale=#{@locale}" + "&apikey=#{@apikey}"
 			puts uri
 			jsontemp = Yajl::Parser.parse(open(uri)) # Parse JSON to ruby object.
 
-			dataURL = jsontemp["files"][0]["url"]
-			lastModified = Time.at(jsontemp["files"][0]["lastModified"]/1000).to_datetime
+			@dataURL = jsontemp["files"][0]["url"]
+			@lastModified = Time.at(jsontemp["files"][0]["lastModified"]/1000)
 
-			puts "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{lastModified}"
-			@log.info "Successfully retrived data URL for #{uri}\nURL: #{dataURL}\nLatest data is from #{lastModified}"
+			puts "Successfully retrived data URL for #{uri}\nURL: #{@dataURL}\nLatest data is from #{@lastModified}"
+			@log.info "Successfully retrived data URL for #{uri}\nURL: #{@dataURL}\nLatest data is from #{@lastModified}"
 
-			return URI(dataURL),lastModified
+			return true
 
 		rescue => e
 			
@@ -47,36 +57,18 @@ class Downloader
 		
 	end
 # Downloads the actual auction database file from a specific server. The fileformat is JSON.
-	def downloadAuctionJSON(uri)
+	def getAuctionJSON
 
 		begin
+			json = open(@dataURL).read
 
-			json = nil
+			if !json.include? "ownerRealm"
+			
+				raise "Recieved something unexpected: \n #{json} \n of class: #{json.class}"
 
-			# Sometimes battle.net does not return anything. Try three times to see if we can get the data.
-			for i in 1..3
-
-				json = Net::HTTP.get(uri)
-				break if json.class != nil.class
-				puts "Retrying download. Run number #{i} from: #{uri}"
 			end
 
-			
-			if json[0..400].include? "<title>404 Not Found</title>"
-				
-				puts "Failed to download the Auction JSON data.\n #{json}"
-				@log.error "Failed to download the Auction JSON data.\n #{json}"
-
-				return false
-
-			else
-			
-				puts "Successfully downloaded auction data."
-				@log.info "Successfully downloaded auction data."
-
-				return json
-
-			end
+			return json
 
 		rescue => e
 			
@@ -103,16 +95,16 @@ class Downloader
 
 				return false
 
-#			elsif itemJSON.include? "unable to get item information."
-#				
-#				puts "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
-#				@log.info "Item: #{itemID} cannot be found on battle.net.\nThis could mean this item is no longer obtainable ingame.\nGetting name from Wowhead instead."
-#
-#				html = Net::HTTP.get(URI("http://www.wowhead.com/item=#{itemID}"))
-#
-#				name = html.scan(/<title>([^<>]*)<\/title>/)[0][0].split(' - Item - World of Warcraft').first
-#
-#				return name,nil
+			elsif itemJSON.include? %{"availableContexts":["trade-skill"]}
+				
+				puts "Successfully retrived JSON for #{itemID}. Crafted item detected and treating it as such"
+				@log.info "Successfully retrived JSON for #{itemID}. Crafted item detected and treating it as such"
+
+				uri = "https://#{@regionURL}/wow/item/#{itemID}/trade-skill?locale=#{@locale}&apikey=#{@apikey}"
+
+				itemJSON = open(uri).string
+
+				return Yajl::Parser.parse(itemJSON)["name"], itemJSON
 
 			else
 
@@ -125,12 +117,17 @@ class Downloader
 
 			
 
-		rescue => e
+		rescue OpenURI::HTTPError => e
 			
-			puts "Failed to connect to battle.net\n #{e}"
-			@log.error "Failed to connect to battle.net\n #{e}"
+			#puts "Failed to connect to battle.net\n #{e}"
+			#@log.error "Failed to connect to battle.net\n #{e}"
 
-			return false
+			#return false
+
+			puts "Item not fount on battle.net\n #{e}"
+			@log.error puts "Item not fount on battle.net\n #{e}"
+
+			return "not found"
 
 		end
 	end

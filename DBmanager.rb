@@ -9,22 +9,15 @@ class DBmanager
 
     def initialize(region, realm, connection)
 
-            @region = region
-            @realm = realm
-
             @auctionsTable = "#{region}_#{realm}_auctions"
             @logTable = "#{region}_#{realm}_auctionsLog"
 
             @log = Logger.new("log.log")
-            dbPath = "databases/#{region}/#{realm}/#{realm}.db"
 
             # Open database if it exists.
-            #@DB = Sequel.connect("postgres://cg:colligate@localhost/colligate")
             @DB = connection
-            #@DB.loggers << Logger.new(STDOUT)
             
-            # Create database and the tables if the database does not exist
-
+            # Create tables if they do not exist.
             if not @DB.table_exists?(@auctionsTable)
                 
                 @DB.create_table(@auctionsTable) do
@@ -64,7 +57,8 @@ class DBmanager
                 @DB.create_table(:items) do
                     Integer     :id, :primary_key => true
                     String      :name, :text => true, :index => true
-                    String      :JSON, :text => true
+                    json        :JSON
+                    boolean     :deprecated
                 end
 
             end
@@ -72,7 +66,7 @@ class DBmanager
             
     end
 
-    def readAuctionJSONFile(json)
+    def trimAuctionJSON(json)
 
         begin
 
@@ -81,27 +75,35 @@ class DBmanager
             f = f.gsub!( /\r\n?/, "\n" ) # Replace windows line endings with unix ( CRFL to FL )
             f = f.chomp("]}\n}").gsub!(",\n", "\n") # Remove ending of file and remove trailing ',' on each line
 
-            puts "Auction JSONfile successfully read."
-            @log.info "Auction JSONfile successfully read."
+            puts "Auction JSONfile successfully trimmed."
+            @log.info "Auction JSONfile successfully trimmed."
 
             return f
 
         rescue => e
             
-            puts "Failed to read auction JSON file\n #{e}"
-            @log.error "Failed to read auction JSON file\n #{e}"
+            puts "Failed to trim auction JSON file\n #{e}"
+            @log.error "Failed to trim auction JSON file\n #{e}"
+
+            return false
 
         end
         
     end
 
     # Writes the loaded aucitons into the SQLite3 database
-    def writeAuctionsToDB(auctions, lastModified)
+    def writeAuctionsToDB(json, lastModified)
 
-        if lastModified == 0
+        auctions = trimAuctionJSON(json)
+
+        if auctions == false
+            return false
+        end
+
+        if lastModified == nil
             puts "lastmodified variable not set! Please make sure to load in a fresh set of data."
             @log.warn "lastmodified variable not set! Please make sure to load in a fresh set of data."
-            return nil
+            return false
         end
 
         begin
@@ -109,40 +111,85 @@ class DBmanager
             puts "Loading new auctions into the database and updating old."
             @log.info "Loading new auctions into the database and updating old."
 
-            
-            auctionsTBL = @DB.from(@auctionsTable)
-
             start = Time.now
 
             @DB.transaction do
 
+                query = %{  
+                    CREATE TEMPORARY TABLE tmp
+                       (
+                        "auctionNumber" bigint NOT NULL,
+                        item integer,
+                        owner text,
+                        bid bigint,
+                        buyout bigint,
+                        quantity integer,
+                        "timeLeft" text,
+                        "createdDate" timestamp without time zone,
+                        "lastModified" timestamp without time zone
+                       ) 
+                       ON COMMIT DROP;
+                            }   
+
+                @DB.run(query)
+
+                alist = []
+
                 auctions.lines.each do |line|
+
 
                     auction = Yajl::Parser.parse(line)
 
-                    query = %{}
+                        alist << {  :auctionNumber => auction["auc"],
+                                    :item => auction["item"], 
+                                    :owner => auction["owner"], 
+                                    :bid => auction["bid"], 
+                                    :buyout => auction["buyout"], 
+                                    :quantity => auction["quantity"],
+                                    :timeLeft => auction["timeLeft"],
+                                    :createdDate => lastModified,
+                                    :lastModified => lastModified
+                                    }  
 
-                    @DB.run
-
-#                    if 1 != auctionsTBL.where(:auctionNumber => auction["auc"]).update( :bid => auction["bid"], 
-#                                                                                        :buyout => auction["buyout"],
-#                                                                                        :timeLeft => auction["timeLeft"],
-#                                                                                        :lastModified => lastModified
-#                                                                                    )
-#
-#                        auctionsTBL.exclude(:auctionNumber => auction["auc"]).insert(   :auctionNumber => auction["auc"],
-#                                                                                        :item => auction["item"], 
-#                                                                                        :owner => auction["owner"], 
-#                                                                                        :bid => auction["bid"], 
-#                                                                                        :buyout => auction["buyout"], 
-#                                                                                        :quantity => auction["quantity"], 
-#                                                                                        :timeLeft => auction["timeLeft"],
-#                                                                                        :createdDate => lastModified,
-#                                                                                        :lastModified => lastModified
-#                                                                                    )
-#                    end
+                    
 
                 end
+
+                @DB[:tmp].multi_insert(alist)
+                    query = %{
+                        INSERT INTO "eu_argent-dawn_auctions"
+                        SELECT source."auctionNumber",
+                            source.item,
+                            source.owner,
+                            source.bid,
+                            source.buyout,
+                            source.quantity,
+                            source."timeLeft",
+                            source."createdDate",
+                            source."lastModified"
+                        FROM tmp AS source
+                        LEFT JOIN "eu_argent-dawn_auctions" AS target ON target."auctionNumber" = source."auctionNumber"
+                        WHERE target."auctionNumber" IS NULL;
+                    }
+
+                    @DB.run(query)
+
+                    query = %{
+                        UPDATE "eu_argent-dawn_auctions" AS target
+                           SET "auctionNumber"=source."auctionNumber", 
+                            item=source.item, 
+                            owner=source.owner, 
+                            bid=source.bid, 
+                            buyout=source.buyout, 
+                            quantity=source.quantity, 
+                               "timeLeft"=source."timeLeft", 
+                               "createdDate"=source."createdDate", 
+                               "lastModified"=source."lastModified"
+                         FROM tmp AS source
+                         WHERE target."auctionNumber" = source."auctionNumber";
+                    }
+
+                    @DB.run(query)
 
 
             end
@@ -164,7 +211,7 @@ class DBmanager
     end
 
 
-    def deleteold(lastModified)
+    def deleteOld(lastModified)
 
         if(lastModified !=0)
 
@@ -193,21 +240,12 @@ class DBmanager
     end
 
 
-    def moveoldtolog(lastModified)
+    def moveOldtoLog(lastModified)
 
         begin
             
             puts "Moving old auctions to log."
             @log.info "Moving old auctions to log."
-
-            logDataset = @DB.from(@logTable)
-            auctionDataset = @DB.from(@auctionsTable)
-
-            #whereClause = '"' + @logTable + '"."auctionNumber" IS NULL'
-
-            #logDataset.insert([:auctionNumber, :item, :owner, :bid, :buyout, :quantity, :timeLeft, :createdDate, :lastModified, :bidCount], auctionDataset.left_outer_join(@logTable, :auctionNumber => :auctionNumber).where(whereClause).qualify )
-
-            #logDataset.insert(auctionDataset.where('"lastModified" < ?', lastModified).exclude(:auctionNumber => logDataset.select(:auctionNumber)))
 
             query = %{INSERT INTO "#{@logTable}"
                 SELECT source."auctionNumber",
@@ -221,12 +259,9 @@ class DBmanager
                    source."lastModified"
                  FROM "#{@auctionsTable}" AS source
                  LEFT JOIN "#{@logTable}" AS destination ON source."auctionNumber" = destination."auctionNumber"
-                 WHERE destination."auctionNumber" IS NULL AND source."lastModified" < '#{lastModified.strftime("%Y-%m-%e %H:%M:%S")}' }
-
+                 WHERE destination."auctionNumber" IS NULL AND source."lastModified" < '#{lastModified.strftime("%Y-%m-%d %H:%M:%S")}' }
 
             @DB.run(query)
-
-            #logDataset.insert_ignore.insert(auctionDataset.where('lastModified < ?', lastModified))
 
             puts "Successfully moved all old auctions to the log tables."
             @log.info "Successfully moved all old auctions to the log tables."
@@ -243,28 +278,6 @@ class DBmanager
 
             
         
-    end
-
-    def itemExistsInDB?(itemID) # Check if a single item exists in the Items table
-
-        begin
-            
-            @db.execute("SELECT COUNT(*) FROM items WHERE ID = :ID", "ID" => itemID) do |item|
-
-                return true if item[0] == 1
-
-                return false
-        
-            end
-
-
-        rescue => e
-            
-            puts "Failed to check if item exists in the database."
-            puts e
-
-        end
-
     end
 
     def insertItem(itemID, itemName, itemJSON) # Inserts an item into the Items table for name resolusion.
@@ -321,21 +334,37 @@ class DBmanager
         
     end
 
+    def setDeprecated(itemID)
+        
+        @DB.run(%{INSERT INTO items(id, deprecated) VALUES (#{itemID}, #{true})})
+
+    end
+
     def close
 
         @DB.disconnect
         
     end
 
+    def getLastModified
+        
+        result = @DB.fetch(%{SELECT "lastModified" FROM "#{@auctionsTable}" ORDER BY "lastModified" DESC LIMIT 1})
 
-    def test
+        time = nil
 
-        puts "Items in AllianceLog:"
-        puts @db.execute("SELECT COUNT(*) item FROM Alliance")[0]
-        puts "Items in HordeLog:"
-        puts @db.execute("SELECT COUNT(*) item FROM Horde")[0]
-        puts "Items in NeutralLog:"
-        puts @db.execute("SELECT COUNT(*) item FROM Neutral")[0]
+        result.each do |timestamp|
+
+            time = timestamp[:lastModified]
+
+        end
+
+        if time == nil
+            time = Time.new(1970,1,1)    
+        end
+
+        
+
+        return time
 
     end
 
