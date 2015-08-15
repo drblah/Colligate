@@ -66,37 +66,12 @@ class DBmanager
             
     end
 
-    def trimAuctionJSON(json)
-
-        begin
-
-            f = json
-            f = f.lines.to_a[3..-1].join # Remove 3 first lines
-            f = f.gsub!( /\r\n?/, "\n" ) # Replace windows line endings with unix ( CRFL to FL )
-            f = f.chomp("]}\n}").gsub!(",\n", "\n") # Remove ending of file and remove trailing ',' on each line
-
-            puts "Auction JSONfile successfully trimmed."
-            @log.info "Auction JSONfile successfully trimmed."
-
-            return f
-
-        rescue => e
-            
-            puts "Failed to trim auction JSON file\n #{e}"
-            @log.error "Failed to trim auction JSON file\n #{e}"
-
-            return false
-
-        end
-        
-    end
-
     # Writes the loaded aucitons into the SQLite3 database
     def writeAuctionsToDB(json, lastModified)
 
-        auctions = trimAuctionJSON(json)
+        auctions = Yajl::Parser.parse(json)["auctions"]
 
-        if auctions == false
+        if auctions == nil
             return false
         end
 
@@ -135,10 +110,7 @@ class DBmanager
 
                 alist = []
 
-                auctions.lines.each do |line|
-
-
-                    auction = Yajl::Parser.parse(line)
+                auctions.each do |auction|
 
                         alist << {  :auctionNumber => auction["auc"],
                                     :item => auction["item"], 
