@@ -19,6 +19,19 @@ class Downloader
 	end
 
 	def getLastModified
+
+		attempts = 1
+
+		while @lastModified.nil?
+
+			puts "Web lastModified not set. Refreshing realm API. #{attempts}. try..."
+
+			refreshRealmAPI
+			sleep 3
+
+			attempts = attempts + 1
+		end
+
 		return @lastModified
 	end
 
