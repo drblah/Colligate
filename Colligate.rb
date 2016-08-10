@@ -31,75 +31,83 @@ end
 
 dbConnection = Sequel.connect("postgres://cg:colligate@localhost/colligate")
 
-while true
+begin
+	while true
 
-	realms.each do |r|
+		realms.each do |r|
 
-	dbManager = DBmanager.new(r["region"], r["realm"], dbConnection)
-	downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
+			dbManager = DBmanager.new(r["region"], r["realm"], dbConnection)
+			downloader = Downloader.new(r["region"], r["realm"], r["locale"], @apikey)
 
-	dbLastModified = dbManager.getLastModified
-	webLastModified = downloader.getLastModified
+			dbLastModified = dbManager.getLastModified
+			webLastModified = downloader.getLastModified
 
-	puts "#{r["realm"]} was last updated: #{dbLastModified}"
+			puts "#{r["realm"]} was last updated: #{dbLastModified}"
 
-	# Begin update if the battle.net data is newer than the data we have in the database
-	if webLastModified > dbLastModified
-		
-		auctions = false
-
-		while auctions == false		
-			auctions = downloader.getAuctionJSON
-			sleep 1
-		end
-
-		if dbManager.writeAuctionsToDB(auctions,webLastModified)
-
-			if dbManager.moveOldtoLog(webLastModified)
+			# Begin update if the battle.net data is newer than the data we have in the database
+			if webLastModified > dbLastModified
 				
-				dbManager.deleteOld(webLastModified)
+				auctions = false
+
+				while auctions == false		
+					auctions = downloader.getAuctionJSON
+					sleep 1
+				end
+
+				if dbManager.writeAuctionsToDB(auctions,webLastModified)
+
+					if dbManager.moveOldtoLog(webLastModified)
+						
+						dbManager.deleteOld(webLastModified)
+
+					end
+					
+					
+				end
+				
+				
+			else
+
+				puts "#{r["realm"]} is up to date. Next update will be at: #{dbLastModified+31*60}"
 
 			end
+
+			missingItems = dbManager.itemsNotInDB
+
+			missingItems.each do |item|
+
+				iJSON = downloader.getItemJSON(item)
+
+				if iJSON.size == 2
+				
+					dbManager.insertItem(item, iJSON[0], iJSON[1])
+
+				elsif iJSON == "not found"
+
+					dbManager.setDeprecated(item)
+					
+
+				end
+
+			end
+
+			puts "#{(dbLastModified+(31*60)-Time.now)/60} minutes until next update for #{r["realm"]}."
 			
-			
+			sleepTime = dbLastModified+(31*60)-Time.now
+
+			sleepTime = 60 if dbLastModified+(31*60)-Time.now < 0
+
+			sleep sleepTime
+
 		end
-		
-		
-	else
 
-		puts "#{r["realm"]} is up to date. Next update will be at: #{dbLastModified+31*60}"
 
+		
 	end
-
-	missingItems = dbManager.itemsNotInDB
-
-	missingItems.each do |item|
-
-		iJSON = downloader.getItemJSON(item)
-
-		if iJSON.size == 2
-		
-			dbManager.insertItem(item, iJSON[0], iJSON[1])
-
-		elsif iJSON == "not found"
-
-			dbManager.setDeprecated(item)
-			
-
-		end
-
-	end
-
-	puts "#{(dbLastModified+(31*60)-Time.now)/60} minutes til next update."
-	
-	sleepTime = dbLastModified+(31*60)-Time.now
-
-	sleepTime = 60 if dbLastModified+(31*60)-Time.now < 0
-
-	sleep sleepTime
-
-end
-
-
-	
+rescue Interrupt
+	# Shutdown sequence
+	puts "\n\n-----------------------"
+	puts "Interrupt caught. Shutting down."
+	puts "-----------------------\n\n"
+	dbConnection.disconnect
 end
