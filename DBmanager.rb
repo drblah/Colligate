@@ -129,7 +129,7 @@ class DBmanager
 
                 @DB[:tmp].multi_insert(alist)
                     query = %{
-                        INSERT INTO "eu_argent-dawn_auctions"
+                        INSERT INTO "#{@auctionsTable}"
                         SELECT source."auctionNumber",
                             source.item,
                             source.owner,
@@ -140,14 +140,14 @@ class DBmanager
                             source."createdDate",
                             source."lastModified"
                         FROM tmp AS source
-                        LEFT JOIN "eu_argent-dawn_auctions" AS target ON target."auctionNumber" = source."auctionNumber"
+                        LEFT JOIN "#{@auctionsTable}" AS target ON target."auctionNumber" = source."auctionNumber"
                         WHERE target."auctionNumber" IS NULL;
                     }
 
                     @DB.run(query)
 
                     query = %{
-                        UPDATE "eu_argent-dawn_auctions" AS target
+                        UPDATE "#{@auctionsTable}" AS target
                            SET "auctionNumber"=source."auctionNumber", 
                             item=source.item, 
                             owner=source.owner, 
