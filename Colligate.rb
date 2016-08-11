@@ -30,7 +30,7 @@ rescue => e
 
 end
 
-dbConnection = Mongo::Client.new('mongodb://10.0.0.100:27017/colligate')
+dbConnection = Mongo::Client.new( [ "10.0.0.100:27017" ], :database => "colligate")
 
 begin
 	while true
