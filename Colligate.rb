@@ -4,9 +4,10 @@ require "yaml"
 require "thread"
 require "date"
 require "sequel"
+require "mongo"
 
 require_relative "Downloader"
-require_relative "DBmanager"
+require_relative "DBmanagerMongo"
 
 begin
 
@@ -29,7 +30,7 @@ rescue => e
 
 end
 
-dbConnection = Sequel.connect("postgres://cg:colligate@localhost/colligate")
+dbConnection = Mongo::Client.new('mongodb://10.0.0.100:27017/colligate')
 
 begin
 	while true
@@ -69,7 +70,6 @@ begin
 			else
 
 				puts "#{r["realm"]} is up to date. Next update will be at: #{dbLastModified+31*60}"
-
 			end
 
 			missingItems = dbManager.itemsNotInDB
@@ -109,5 +109,5 @@ rescue Interrupt
 	puts "\n\n-----------------------"
 	puts "Interrupt caught. Shutting down."
 	puts "-----------------------\n\n"
-	dbConnection.disconnect
+	dbConnection.close
 end
