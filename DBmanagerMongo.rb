@@ -199,7 +199,7 @@ class DBmanager
 
     def setDeprecated(itemID)
         
-        @DB.update_one( { "_id" => itemID}, { "$set" => { "deprecated" => true } } )
+        @DB[:item].update_one( { "_id" => itemID}, { "$set" => { "deprecated" => true } } )
 
     end
 
