@@ -7,7 +7,7 @@ require "sequel"
 require "mongo"
 
 require_relative "Downloader"
-require_relative "DBmanagerMongo"
+require_relative "DBmanager"
 
 begin
 
@@ -30,7 +30,9 @@ rescue => e
 
 end
 
-dbConnection = Mongo::Client.new( [ "10.0.0.100:27017" ], :database => "colligate")
+#dbConnection = Mongo::Client.new( [ "10.0.0.100:27017" ], :database => "colligate")
+dbConnection = Sequel.connect('postgres://postgres:@localhost/colligate')
+
 
 begin
 	while true
@@ -109,5 +111,6 @@ rescue Interrupt
 	puts "\n\n-----------------------"
 	puts "Interrupt caught. Shutting down."
 	puts "-----------------------\n\n"
-	dbConnection.close
+	#dbConnection.close
+	dbConnection.disconnect
 end
