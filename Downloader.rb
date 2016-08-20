@@ -95,7 +95,7 @@ class Downloader
 	end
 
 	def getItemJSON(itemID) # Resolves an item's name from the battle.net api.
-
+		retries = 0
 		begin
 			uri = "https://" + @regionURL + "/wow/item/" + String(itemID) + "?locale=#{@locale}" + "&apikey=#{@apikey}"
 			puts "Item request #{uri}"
@@ -132,15 +132,26 @@ class Downloader
 
 		rescue OpenURI::HTTPError => e
 			
-			#puts "Failed to connect to battle.net\n #{e}"
-			#@log.error "Failed to connect to battle.net\n #{e}"
+			if retries < 3 && e.include? "504 Gateway Timeout"
+				puts "Failed to connect to battle.net:\n #{e}\nretrying: #{retries}..."
+				@log.error "Failed to connect to battle.net:\n #{e}\nretrying: #{retries}..."
 
-			#return false
+				retries = retries + 1
 
-			puts "Item not fount on battle.net\n #{e}"
-			@log.error puts "Item not fount on battle.net\n #{e}"
+				sleep 2
 
-			return "not found"
+				retry
+			
+			else
+
+				puts "Item not fount on battle.net\n #{e}"
+				@log.error "Item not fount on battle.net\n #{e}"
+
+				return "not found"
+
+			end
+
+			
 
 		end
 	end
