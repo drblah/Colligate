@@ -1,0 +1,24 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    bson (4.1.1)
+    mongo (2.3.0)
+      bson (~> 4.1)
+    pg (0.18.4)
+    sequel (4.37.0)
+    sequel_pg (1.6.17)
+      pg (>= 0.8.0)
+      sequel (>= 4.0.0)
+    yajl-ruby (1.2.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  mongo
+  sequel
+  sequel_pg
+  yajl-ruby
+
+BUNDLED WITH
+   1.12.5
