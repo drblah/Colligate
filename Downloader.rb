@@ -132,7 +132,7 @@ class Downloader
 
 		rescue OpenURI::HTTPError => e
 			
-			if retries < 3 && e.to.s.include?("504 Gateway Timeout")
+			if retries < 3 && e.to_s.include?("504 Gateway Timeout")
 				puts "Failed to connect to battle.net:\n #{e}\nretrying: #{retries}..."
 				@log.error "Failed to connect to battle.net:\n #{e}\nretrying: #{retries}..."
 
