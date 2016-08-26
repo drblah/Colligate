@@ -68,8 +68,13 @@ class DBmanager
 
     # Writes the loaded aucitons into the SQLite3 database
     def writeAuctionsToDB(json, lastModified)
-
-        auctions = Yajl::Parser.parse(json)["auctions"]
+        begin
+            auctions = Yajl::Parser.parse(json)["auctions"]    
+        rescue Yajl::ParseError => e
+            puts "Failed to parse Auction JSON.\n#{e}"
+            return false
+        end
+        
 
         if auctions == nil
             return false
